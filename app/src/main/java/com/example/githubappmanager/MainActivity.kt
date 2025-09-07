@@ -12,7 +12,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
-//import androidx.compose.material.icons.filled.ArrowDownward
+import androidx.compose.material.icons.filled.CloudDownload
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
@@ -255,7 +255,7 @@ private fun RepoCard(
                             AppInstallStatus.NOT_INSTALLED -> {
                                 IconButton(onClick = onInstall) {
                                     Icon(
-                                        Icons.Filled.Settings,
+                                        Icons.Filled.CloudDownload,
                                         contentDescription = "Install",
                                         tint = MaterialTheme.colorScheme.primary
                                     )
@@ -284,7 +284,7 @@ private fun RepoCard(
                                     if (it) {
                                         IconButton(onClick = onInstall) {
                                             Icon(
-                                                Icons.Filled.Settings,
+                                                Icons.Filled.CloudDownload,
                                                 contentDescription = "Install",
                                                 tint = MaterialTheme.colorScheme.primary
                                             )
