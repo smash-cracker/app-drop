@@ -6,17 +6,23 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.githubappmanager.data.GitHubRepo
 import com.example.githubappmanager.ui.theme.GithubAppManagerTheme
 
 class MainActivity : ComponentActivity() {
@@ -33,6 +39,10 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun GithubAppManagerApp() {
     GithubAppManagerTheme {
+        val viewModel: RepoViewModel = viewModel()
+        val repos by viewModel.repos.collectAsState(initial = emptyList())
+        val isLoading by viewModel.isLoading.collectAsState()
+        
         val snackbarHostState = remember { SnackbarHostState() }
         var showAddDialog by rememberSaveable { mutableStateOf(false) }
 
@@ -45,14 +55,25 @@ fun GithubAppManagerApp() {
                 )
             },
             floatingActionButton = {
-                FloatingActionButton(onClick = { showAddDialog = true }) {
-                    Icon(Icons.Filled.Add, contentDescription = "Add repository")
+                FloatingActionButton(
+                    onClick = { showAddDialog = true },
+                    modifier = if (isLoading) Modifier else Modifier
+                ) {
+                    if (isLoading) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(24.dp),
+                            strokeWidth = 2.dp
+                        )
+                    } else {
+                        Icon(Icons.Filled.Add, contentDescription = "Add repository")
+                    }
                 }
             },
-            // Apply system bar insets when using edge-to-edge
             contentWindowInsets = WindowInsets.safeDrawing
         ) { innerPadding ->
             RepoListScreen(
+                repos = repos,
+                onDeleteRepo = { repo -> viewModel.removeRepo(repo.url) },
                 modifier = Modifier
                     .padding(innerPadding)
                     .fillMaxSize()
@@ -63,7 +84,7 @@ fun GithubAppManagerApp() {
             AddRepoDialog(
                 onDismiss = { showAddDialog = false },
                 onConfirm = { url ->
-                    // TODO: hand off to ViewModel (e.g., add repo, refresh list)
+                    viewModel.addRepo(url)
                     showAddDialog = false
                 }
             )
@@ -72,9 +93,73 @@ fun GithubAppManagerApp() {
 }
 
 @Composable
-private fun RepoListScreen(modifier: Modifier = Modifier) {
-    Box(modifier, contentAlignment = Alignment.Center) {
-        Text("No repositories yet")
+private fun RepoListScreen(
+    repos: List<GitHubRepo>,
+    onDeleteRepo: (GitHubRepo) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    if (repos.isEmpty()) {
+        Box(modifier, contentAlignment = Alignment.Center) {
+            Text("No repositories yet")
+        }
+    } else {
+        LazyColumn(
+            modifier = modifier,
+            contentPadding = PaddingValues(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            items(repos) { repo ->
+                RepoCard(
+                    repo = repo,
+                    onDelete = { onDeleteRepo(repo) }
+                )
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun RepoCard(
+    repo: GitHubRepo,
+    onDelete: () -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(
+                modifier = Modifier.weight(1f)
+            ) {
+                Text(
+                    text = "${repo.owner}/${repo.name}",
+                    style = MaterialTheme.typography.titleMedium,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Text(
+                    text = repo.url,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+            IconButton(onClick = onDelete) {
+                Icon(
+                    Icons.Filled.Delete,
+                    contentDescription = "Delete repository",
+                    tint = MaterialTheme.colorScheme.error
+                )
+            }
+        }
     }
 }
 
