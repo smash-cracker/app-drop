@@ -20,7 +20,10 @@ data class SerializableGitHubRepo(
     val url: String,
     val name: String,
     val owner: String,
-    val addedAt: Long
+    val addedAt: Long,
+    val latestRelease: GitHubRelease? = null,
+    val packageName: String? = null,
+    val installStatus: AppInstallStatus = AppInstallStatus.UNKNOWN
 )
 
 class RepoDataStore(private val context: Context) {
@@ -33,7 +36,7 @@ class RepoDataStore(private val context: Context) {
             try {
                 val serializable = Json.decodeFromString<List<SerializableGitHubRepo>>(jsonString)
                 serializable.map { 
-                    GitHubRepo(it.url, it.name, it.owner, it.addedAt) 
+                    GitHubRepo(it.url, it.name, it.owner, it.addedAt, it.latestRelease, it.packageName, it.installStatus) 
                 }
             } catch (e: Exception) {
                 emptyList()
@@ -53,7 +56,10 @@ class RepoDataStore(private val context: Context) {
                 url = repo.url,
                 name = repo.name,
                 owner = repo.owner,
-                addedAt = repo.addedAt
+                addedAt = repo.addedAt,
+                latestRelease = repo.latestRelease,
+                packageName = repo.packageName,
+                installStatus = repo.installStatus
             )
             
             preferences[reposKey] = Json.encodeToString(updatedRepos)
@@ -70,6 +76,35 @@ class RepoDataStore(private val context: Context) {
             }
             
             val updatedRepos = currentRepos.filter { it.url != url }
+            preferences[reposKey] = Json.encodeToString(updatedRepos)
+        }
+    }
+    
+    suspend fun updateRepo(repo: GitHubRepo) {
+        context.dataStore.edit { preferences ->
+            val currentJsonString = preferences[reposKey] ?: "[]"
+            val currentRepos = try {
+                Json.decodeFromString<List<SerializableGitHubRepo>>(currentJsonString)
+            } catch (e: Exception) {
+                emptyList()
+            }
+            
+            val updatedRepos = currentRepos.map { existingRepo ->
+                if (existingRepo.url == repo.url) {
+                    SerializableGitHubRepo(
+                        url = repo.url,
+                        name = repo.name,
+                        owner = repo.owner,
+                        addedAt = repo.addedAt,
+                        latestRelease = repo.latestRelease,
+                        packageName = repo.packageName,
+                        installStatus = repo.installStatus
+                    )
+                } else {
+                    existingRepo
+                }
+            }
+            
             preferences[reposKey] = Json.encodeToString(updatedRepos)
         }
     }

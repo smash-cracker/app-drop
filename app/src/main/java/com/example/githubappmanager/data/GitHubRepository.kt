@@ -4,7 +4,10 @@ data class GitHubRepo(
     val url: String,
     val name: String,
     val owner: String,
-    val addedAt: Long = System.currentTimeMillis()
+    val addedAt: Long = System.currentTimeMillis(),
+    val latestRelease: GitHubRelease? = null,
+    val packageName: String? = null,
+    val installStatus: AppInstallStatus = AppInstallStatus.UNKNOWN
 ) {
     companion object {
         fun fromUrl(url: String): GitHubRepo {
@@ -22,4 +25,6 @@ data class GitHubRepo(
             )
         }
     }
+    
+    val displayName: String get() = "$owner/$name"
 }

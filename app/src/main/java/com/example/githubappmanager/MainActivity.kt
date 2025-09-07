@@ -12,6 +12,9 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
+//import androidx.compose.material.icons.filled.ArrowDownward
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -23,6 +26,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.githubappmanager.data.GitHubRepo
+import com.example.githubappmanager.data.AppInstallStatus
+import com.example.githubappmanager.utils.DownloadProgress
 import com.example.githubappmanager.ui.theme.GithubAppManagerTheme
 
 class MainActivity : ComponentActivity() {
@@ -42,6 +47,7 @@ fun GithubAppManagerApp() {
         val viewModel: RepoViewModel = viewModel()
         val repos by viewModel.repos.collectAsState(initial = emptyList())
         val isLoading by viewModel.isLoading.collectAsState()
+        val downloadProgress by viewModel.downloadProgress.collectAsState()
         
         val snackbarHostState = remember { SnackbarHostState() }
         var showAddDialog by rememberSaveable { mutableStateOf(false) }
@@ -73,7 +79,16 @@ fun GithubAppManagerApp() {
         ) { innerPadding ->
             RepoListScreen(
                 repos = repos,
+                downloadProgress = downloadProgress,
                 onDeleteRepo = { repo -> viewModel.removeRepo(repo.url) },
+                onRefreshRepo = { repo -> viewModel.refreshRepo(repo) },
+                onInstallApp = { repo -> 
+                    viewModel.downloadAndInstallApk(repo)
+                },
+                onUninstallApp = { repo -> 
+                    repo.packageName?.let { viewModel.uninstallApp(it) }
+                },
+                onClearProgress = { repo -> viewModel.clearDownloadProgress(repo.url) },
                 modifier = Modifier
                     .padding(innerPadding)
                     .fillMaxSize()
@@ -95,7 +110,12 @@ fun GithubAppManagerApp() {
 @Composable
 private fun RepoListScreen(
     repos: List<GitHubRepo>,
+    downloadProgress: Map<String, DownloadProgress>,
     onDeleteRepo: (GitHubRepo) -> Unit,
+    onRefreshRepo: (GitHubRepo) -> Unit,
+    onInstallApp: (GitHubRepo) -> Unit,
+    onUninstallApp: (GitHubRepo) -> Unit,
+    onClearProgress: (GitHubRepo) -> Unit,
     modifier: Modifier = Modifier
 ) {
     if (repos.isEmpty()) {
@@ -111,7 +131,12 @@ private fun RepoListScreen(
             items(repos) { repo ->
                 RepoCard(
                     repo = repo,
-                    onDelete = { onDeleteRepo(repo) }
+                    downloadProgress = downloadProgress[repo.url],
+                    onDelete = { onDeleteRepo(repo) },
+                    onRefresh = { onRefreshRepo(repo) },
+                    onInstall = { onInstallApp(repo) },
+                    onUninstall = { onUninstallApp(repo) },
+                    onClearProgress = { onClearProgress(repo) }
                 )
             }
         }
@@ -122,42 +147,162 @@ private fun RepoListScreen(
 @Composable
 private fun RepoCard(
     repo: GitHubRepo,
-    onDelete: () -> Unit
+    downloadProgress: DownloadProgress?,
+    onDelete: () -> Unit,
+    onRefresh: () -> Unit,
+    onInstall: () -> Unit,
+    onUninstall: () -> Unit,
+    onClearProgress: () -> Unit
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
-        Row(
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+                .padding(16.dp)
         ) {
-            Column(
-                modifier = Modifier.weight(1f)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.Top
             ) {
-                Text(
-                    text = "${repo.owner}/${repo.name}",
-                    style = MaterialTheme.typography.titleMedium,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-                Text(
-                    text = repo.url,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-            }
-            IconButton(onClick = onDelete) {
-                Icon(
-                    Icons.Filled.Delete,
-                    contentDescription = "Delete repository",
-                    tint = MaterialTheme.colorScheme.error
-                )
+                Column(
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Text(
+                        text = repo.displayName,
+                        style = MaterialTheme.typography.titleMedium,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    Text(
+                        text = repo.url,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    
+                    repo.latestRelease?.let { release ->
+                        Text(
+                            text = "Latest: ${release.tagName}",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.padding(top = 4.dp)
+                        )
+                    }
+                    
+                    downloadProgress?.let { progress ->
+                        if (progress.error != null) {
+                            Text(
+                                text = "Download failed: ${progress.error}",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.error,
+                                modifier = Modifier.padding(top = 4.dp)
+                            )
+                        } else if (!progress.isComplete) {
+                            val progressPercent = if (progress.totalBytes > 0) {
+                                (progress.bytesDownloaded * 100 / progress.totalBytes).toInt()
+                            } else 0
+                            Text(
+                                text = "Downloading... $progressPercent%",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.padding(top = 4.dp)
+                            )
+                            LinearProgressIndicator(
+                                progress = { 
+                                    if (progress.totalBytes > 0) {
+                                        progress.bytesDownloaded.toFloat() / progress.totalBytes.toFloat()
+                                    } else 0f
+                                },
+                                modifier = Modifier.fillMaxWidth().padding(top = 2.dp)
+                            )
+                        }
+                    }
+                }
+                
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    IconButton(onClick = onRefresh) {
+                        Icon(
+                            Icons.Filled.Refresh,
+                            contentDescription = "Refresh",
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                    
+                    downloadProgress?.let { progress ->
+                        if (progress.error != null) {
+                            IconButton(onClick = onClearProgress) {
+                                Icon(
+                                    Icons.Filled.Refresh,
+                                    contentDescription = "Clear error",
+                                    tint = MaterialTheme.colorScheme.error
+                                )
+                            }
+                        } else if (!progress.isComplete) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(24.dp),
+                                strokeWidth = 2.dp
+                            )
+                        }
+                    } ?: run {
+                        when (repo.installStatus) {
+                            AppInstallStatus.NOT_INSTALLED -> {
+                                IconButton(onClick = onInstall) {
+                                    Icon(
+                                        Icons.Filled.Settings,
+                                        contentDescription = "Install",
+                                        tint = MaterialTheme.colorScheme.primary
+                                    )
+                                }
+                            }
+                            AppInstallStatus.INSTALLED_OUTDATED -> {
+                                IconButton(onClick = onInstall) {
+                                    Icon(
+                                        Icons.Filled.Settings,
+                                        contentDescription = "Update",
+                                        tint = MaterialTheme.colorScheme.tertiary
+                                    )
+                                }
+                            }
+                            AppInstallStatus.INSTALLED_CURRENT -> {
+                                IconButton(onClick = onUninstall) {
+                                    Icon(
+                                        Icons.Filled.Delete,
+                                        contentDescription = "Uninstall",
+                                        tint = MaterialTheme.colorScheme.error
+                                    )
+                                }
+                            }
+                            AppInstallStatus.UNKNOWN -> {
+                                repo.latestRelease?.androidAssets?.isNotEmpty()?.let {
+                                    if (it) {
+                                        IconButton(onClick = onInstall) {
+                                            Icon(
+                                                Icons.Filled.Settings,
+                                                contentDescription = "Install",
+                                                tint = MaterialTheme.colorScheme.primary
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    
+                    IconButton(onClick = onDelete) {
+                        Icon(
+                            Icons.Filled.Delete,
+                            contentDescription = "Delete repository",
+                            tint = MaterialTheme.colorScheme.error
+                        )
+                    }
+                }
             }
         }
     }
