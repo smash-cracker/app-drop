@@ -1,6 +1,7 @@
 package com.example.githubappmanager
 
 import android.app.Application
+import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.githubappmanager.data.GitHubRepo
@@ -111,6 +112,7 @@ class RepoViewModel(application: Application) : AndroidViewModel(application) {
     }
     
     fun uninstallApp(packageName: String) {
+        Log.d("RepoViewModel", "uninstallApp requested for package=$packageName")
         appInstallManager.uninstallApp(packageName)
     }
     

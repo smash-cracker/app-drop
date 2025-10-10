@@ -6,6 +6,7 @@ import android.content.pm.PackageInfo
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
+import android.util.Log
 import androidx.core.content.FileProvider
 import com.example.githubappmanager.data.AppInfo
 import com.example.githubappmanager.data.AppInstallStatus
@@ -26,6 +27,10 @@ class AppInstallManager(private val context: Context) {
             }
             
             val applicationInfo = packageInfo.applicationInfo
+            Log.d(
+                "AppInstallManager",
+                "getInstalledAppInfo: found pkg=${packageInfo.packageName}, versionName=${packageInfo.versionName}, isSystem=${(applicationInfo?.flags ?: 0) and android.content.pm.ApplicationInfo.FLAG_SYSTEM != 0}"
+            )
             AppInfo(
                 packageName = packageInfo.packageName,
                 versionName = packageInfo.versionName ?: "Unknown",
@@ -40,12 +45,15 @@ class AppInstallManager(private val context: Context) {
                 } ?: false
             )
         } catch (e: PackageManager.NameNotFoundException) {
+            Log.w("AppInstallManager", "getInstalledAppInfo: package not found: $packageName")
             null
         }
     }
 
     fun guessPackageName(owner: String, repoName: String): String {
-        return "com.${owner.lowercase()}.${repoName.lowercase().replace("-", "").replace("_", "")}"
+        val packageName = "com.${owner.lowercase()}.${repoName.lowercase().replace("-", "").replace("_", "")}"
+        Log.d("AppInstallManager", "Guessed package name for $owner/$repoName: $packageName")
+        return packageName
     }
 
     fun checkInstallStatus(release: GitHubRelease, packageName: String): AppInstallStatus {
@@ -85,10 +93,32 @@ class AppInstallManager(private val context: Context) {
     }
 
     fun uninstallApp(packageName: String) {
+        Log.d(
+            "AppInstallManager",
+            "Attempting to uninstall package: $packageName (sdk=${Build.VERSION.SDK_INT})"
+        )
+        
+        // Check if the app is actually installed
+        val isInstalled = getInstalledAppInfo(packageName) != null
+        Log.d("AppInstallManager", "Package $packageName installed: $isInstalled")
+        
+        if (!isInstalled) {
+            Log.w("AppInstallManager", "Cannot uninstall $packageName - not installed")
+            return
+        }
+        
         val intent = Intent(Intent.ACTION_DELETE).apply {
             data = Uri.parse("package:$packageName")
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         }
-        context.startActivity(intent)
+        
+        try {
+            Log.d("AppInstallManager", "Launching uninstall intent: $intent for $packageName")
+            context.startActivity(intent)
+            Log.d("AppInstallManager", "Uninstall intent launched for $packageName")
+        } catch (e: Exception) {
+            Log.e("AppInstallManager", "Failed to launch uninstall intent for $packageName", e)
+        }
     }
 
     fun installApk(apkFile: File) {

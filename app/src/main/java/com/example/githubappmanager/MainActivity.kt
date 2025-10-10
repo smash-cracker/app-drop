@@ -1,6 +1,7 @@
 package com.example.githubappmanager
 
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -86,7 +87,15 @@ fun GithubAppManagerApp() {
                     viewModel.downloadAndInstallApk(repo)
                 },
                 onUninstallApp = { repo -> 
-                    repo.packageName?.let { viewModel.uninstallApp(it) }
+                    if (repo.packageName == null) {
+                        Log.w("MainActivity", "Uninstall clicked but packageName is null for ${repo.url}")
+                    } else {
+                        Log.d(
+                            "MainActivity",
+                            "Uninstall clicked: url=${repo.url}, pkg=${repo.packageName}, status=${repo.installStatus}"
+                        )
+                        viewModel.uninstallApp(repo.packageName)
+                    }
                 },
                 onClearProgress = { repo -> viewModel.clearDownloadProgress(repo.url) },
                 modifier = Modifier
@@ -295,10 +304,26 @@ private fun RepoCard(
                         }
                     }
                     
-                    IconButton(onClick = onDelete) {
+                    IconButton(
+                        onClick = {
+                            when (repo.installStatus) {
+                                AppInstallStatus.INSTALLED_CURRENT, 
+                                AppInstallStatus.INSTALLED_OUTDATED -> {
+                                    onUninstall()
+                                }
+                                else -> {
+                                    onDelete()
+                                }
+                            }
+                        }
+                    ) {
                         Icon(
                             Icons.Filled.Delete,
-                            contentDescription = "Delete repository",
+                            contentDescription = when (repo.installStatus) {
+                                AppInstallStatus.INSTALLED_CURRENT, 
+                                AppInstallStatus.INSTALLED_OUTDATED -> "Uninstall app"
+                                else -> "Delete repository"
+                            },
                             tint = MaterialTheme.colorScheme.error
                         )
                     }
