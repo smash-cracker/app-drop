@@ -1,38 +1,84 @@
 package com.example.githubappmanager.widgets
 
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.Column
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Search
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Text
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.githubappmanager.RepoViewModel
 
-/** 
- * A reusable SearchBar composable. 
- * `query` and `onQueryChange` are used to control the text externally.
+/**
+ * A unified SearchBar for searching repos or adding a new GitHub repo directly.
+ *
+ * - If the input is a valid GitHub repo URL, pressing Enter will add it.
+ * - Otherwise, pressing Enter will trigger a search via onQueryChange.
+ *
+ * @param query Current search query
+ * @param onQueryChange Lambda to update search filter in parent
+ * @param modifier Optional Modifier
+ * @param onError Optional lambda to show validation errors
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SearchBar(
     query: String,
     onQueryChange: (String) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onError: ((String) -> Unit)? = null
 ) {
-    Column(modifier = modifier) {
-        OutlinedTextField(
-            value = query,
-            onValueChange = onQueryChange,
-            leadingIcon = { androidx.compose.material3.Icon(Icons.Filled.Search, contentDescription = null) },
-            label = { Text("Search repositories") },
-            singleLine = true,
-            keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(imeAction = ImeAction.Search),
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 16.dp)
-        )
-    }
+    var inputText by remember { mutableStateOf(query) }
+    val viewModel: RepoViewModel = viewModel()
+    val error = remember(inputText) { validateGithubUrl(inputText) }
+    val isValid = error == null
+
+    OutlinedTextField(
+        value = inputText,
+        onValueChange = { inputText = it },
+        label = { Text("Paste GitHub repo URL or search") },
+        singleLine = true,
+        isError = !isValid && inputText.isNotBlank(),
+        supportingText = { if (!isValid && inputText.isNotBlank()) Text(error!!) },
+        keyboardOptions = KeyboardOptions(
+            imeAction = ImeAction.Done
+        ),
+        keyboardActions = KeyboardActions(
+            onDone = {
+                if (inputText.isBlank()) return@KeyboardActions
+                if (isValid) {
+                    // Add repo directly if valid URL
+                    viewModel.addRepo(inputText.trim())
+                    inputText = ""
+                } else {
+                    // Otherwise treat it as search query
+                    onQueryChange(inputText)
+                    onError?.invoke(error ?: "Invalid URL")
+                }
+            }
+        ),
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(16.dp)
+    )
+}
+
+/** Returns null if valid, else an error string. */
+private fun validateGithubUrl(input: String): String? {
+    val s = input.trim()
+    if (s.isEmpty()) return null // empty input can still be used as search
+
+    val httpsRegex = Regex(
+        """^(https?://)?(www\.)?github\.com/[^/\s]+/[^/\s]+/?(\.git)?$""",
+        RegexOption.IGNORE_CASE
+    )
+    val sshRegex = Regex(
+        """^git@github\.com:[^/\s]+/[^/\s]+(\.git)?$""",
+        RegexOption.IGNORE_CASE
+    )
+
+    return if (httpsRegex.matches(s) || sshRegex.matches(s)) null
+    else "Enter a valid GitHub repo URL (e.g., github.com/user/repo)"
 }
