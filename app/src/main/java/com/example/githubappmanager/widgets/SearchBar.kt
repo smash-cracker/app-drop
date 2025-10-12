@@ -5,6 +5,7 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
@@ -35,34 +36,60 @@ fun SearchBar(
     val error = remember(inputText) { validateGithubUrl(inputText) }
     val isValid = error == null
 
-    OutlinedTextField(
-        value = inputText,
-        onValueChange = { inputText = it },
-        label = { Text("Paste GitHub repo URL or search") },
-        singleLine = true,
-        isError = !isValid && inputText.isNotBlank(),
-        supportingText = { if (!isValid && inputText.isNotBlank()) Text(error!!) },
-        keyboardOptions = KeyboardOptions(
-            imeAction = ImeAction.Done
-        ),
-        keyboardActions = KeyboardActions(
-            onDone = {
-                if (inputText.isBlank()) return@KeyboardActions
-                if (isValid) {
-                    // Add repo directly if valid URL
-                    viewModel.addRepo(inputText.trim())
-                    inputText = ""
-                } else {
-                    // Otherwise treat it as search query
-                    onQueryChange(inputText)
-                    onError?.invoke(error ?: "Invalid URL")
-                }
-            }
-        ),
+    Column(
         modifier = modifier
             .fillMaxWidth()
             .padding(16.dp)
-    )
+    ) {
+        // --- Search input box ---
+        OutlinedTextField(
+            value = inputText,
+            onValueChange = { inputText = it },
+            label = { Text("Paste GitHub repo URL or search") },
+            singleLine = true,
+            isError = !isValid && inputText.isNotBlank(),
+            supportingText = { if (!isValid && inputText.isNotBlank()) Text(error!!) },
+            keyboardOptions = KeyboardOptions(
+                imeAction = ImeAction.Done
+            ),
+            keyboardActions = KeyboardActions(
+                onDone = {
+                    if (inputText.isBlank()) return@KeyboardActions
+                    if (isValid) {
+                        // Add repo directly if valid URL
+                        viewModel.addRepo(inputText.trim())
+                        inputText = ""
+                    } else {
+                        // Otherwise treat it as search query
+                        onQueryChange(inputText)
+                        onError?.invoke(error ?: "Invalid URL")
+                    }
+                }
+            ),
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        // --- Recently Viewed + Clear All Row ---
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "Recently Viewed",
+                style = MaterialTheme.typography.bodyMedium
+            )
+
+            TextButton(
+                onClick = { viewModel.clearRecentlyViewed() },
+                contentPadding = PaddingValues(0.dp)
+            ) {
+                Text("Clear All")
+            }
+        }
+    }
 }
 
 /** Returns null if valid, else an error string. */
