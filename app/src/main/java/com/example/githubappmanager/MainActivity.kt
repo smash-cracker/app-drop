@@ -44,6 +44,7 @@ fun GithubAppManagerApp() {
     GithubAppManagerTheme {
         val viewModel: RepoViewModel = viewModel()
         val repos by viewModel.repos.collectAsState(initial = emptyList())
+        val recentlyViewed by viewModel.recentlyViewed.collectAsState(initial = emptyList())
         val downloadProgress by viewModel.downloadProgress.collectAsState()
 
         val snackbarHostState = remember { SnackbarHostState() }
@@ -98,7 +99,7 @@ fun GithubAppManagerApp() {
                 )
 
                 "search" -> SearchScreen(
-                    repos = repos,
+                    repos = recentlyViewed,
                     downloadProgress = downloadProgress,
                     onRefreshRepo = { repo -> viewModel.refreshRepo(repo) },
                     onInstallApp = { repo -> viewModel.downloadAndInstallApk(repo) },

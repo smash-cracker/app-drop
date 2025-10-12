@@ -82,6 +82,7 @@ class RepoViewModel(application: Application) : AndroidViewModel(application) {
                 )
 
                 repoDataStore.addRepo(repoWithRelease)
+                addRecentlyViewed(repoWithRelease)
             } finally {
                 _isLoading.value = false
             }
@@ -102,6 +103,7 @@ class RepoViewModel(application: Application) : AndroidViewModel(application) {
                 )
 
                 repoDataStore.updateRepo(updatedRepo)
+                addRecentlyViewed(updatedRepo)
             } catch (e: Exception) {
                 Log.e("RepoViewModel", "refreshRepo failed", e)
             }
@@ -116,6 +118,7 @@ class RepoViewModel(application: Application) : AndroidViewModel(application) {
 
     fun downloadAndInstallApk(repo: GitHubRepo) {
         viewModelScope.launch {
+            addRecentlyViewed(repo)
             val release = repo.latestRelease ?: return@launch
             val apkAsset = release.preferredApk ?: return@launch
 
