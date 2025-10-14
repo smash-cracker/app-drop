@@ -27,6 +27,7 @@ import com.example.githubappmanager.data.GitHubRepo
 import com.example.githubappmanager.ui.theme.GithubAppManagerTheme
 import com.example.githubappmanager.utils.DownloadProgress
 import com.example.githubappmanager.widgets.SearchBar
+import com.example.githubappmanager.ui.explore.ExploreScreen
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -64,6 +65,12 @@ fun GithubAppManagerApp() {
                         label = { Text("Home") }
                     )
                     NavigationBarItem(
+                        selected = selectedTab == "explore",
+                        onClick = { selectedTab = "explore" },
+                        icon = { Icon(Icons.Filled.Public, contentDescription = "Explore") },
+                        label = { Text("Explore") }
+                    )
+                    NavigationBarItem(
                         selected = selectedTab == "search",
                         onClick = { selectedTab = "search" },
                         icon = { Icon(Icons.Filled.Search, contentDescription = "Search") },
@@ -93,6 +100,12 @@ fun GithubAppManagerApp() {
                         )
                     },
                     onClearProgress = { repo -> viewModel.clearDownloadProgress(repo.url) },
+                    modifier = Modifier
+                        .padding(innerPadding)
+                        .fillMaxSize()
+                )
+
+                "explore" -> ExploreScreen(
                     modifier = Modifier
                         .padding(innerPadding)
                         .fillMaxSize()
@@ -132,6 +145,56 @@ fun GithubAppManagerApp() {
     }
 }
 
+/* ---------------------- Explore Screen ---------------------- */
+// @Composable
+// fun ExploreScreen(modifier: Modifier = Modifier) {
+//     Column(
+//         modifier = modifier
+//             .padding(16.dp)
+//             .fillMaxSize(),
+//         verticalArrangement = Arrangement.spacedBy(12.dp)
+//     ) {
+//         Text(
+//             text = "Explore",
+//             style = MaterialTheme.typography.headlineMedium
+//         )
+//         Text(
+//             text = "Discover trending GitHub repositories, new projects, and popular developers!",
+//             style = MaterialTheme.typography.bodyMedium
+//         )
+
+//         // Example UI
+//         LazyColumn(
+//             modifier = Modifier.fillMaxSize(),
+//             verticalArrangement = Arrangement.spacedBy(12.dp)
+//         ) {
+//             items((1..10).toList()) { index ->
+//                 Card(
+//                     modifier = Modifier.fillMaxWidth(),
+//                     elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+//                 ) {
+//                     Column(
+//                         modifier = Modifier
+//                             .fillMaxWidth()
+//                             .padding(16.dp)
+//                     ) {
+//                         Text(
+//                             text = "Trending Repo #$index",
+//                             style = MaterialTheme.typography.titleMedium
+//                         )
+//                         Text(
+//                             text = "An awesome open-source project to explore and learn from.",
+//                             style = MaterialTheme.typography.bodySmall,
+//                             color = MaterialTheme.colorScheme.onSurfaceVariant
+//                         )
+//                     }
+//                 }
+//             }
+//         }
+//     }
+// }
+
+/* ---------------------- Home Repo List Screen ---------------------- */
 @Composable
 private fun RepoListScreen(
     repos: List<GitHubRepo>,
@@ -166,6 +229,7 @@ private fun RepoListScreen(
     }
 }
 
+/* ---------------------- Search Screen ---------------------- */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SearchScreen(
@@ -219,6 +283,7 @@ fun SearchScreen(
     }
 }
 
+/* ---------------------- Repo Card ---------------------- */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun RepoCard(
@@ -336,6 +401,7 @@ private fun RepoCard(
     }
 }
 
+/* ---------------------- Add Repo Dialog ---------------------- */
 @Composable
 private fun AddRepoDialog(
     onDismiss: () -> Unit,
@@ -373,6 +439,7 @@ private fun AddRepoDialog(
     )
 }
 
+/* ---------------------- URL Validation ---------------------- */
 private fun validateGithubUrl(input: String): String? {
     val s = input.trim()
     if (s.isEmpty()) return "URL cannot be empty"
