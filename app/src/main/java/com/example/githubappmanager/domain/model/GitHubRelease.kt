@@ -1,4 +1,4 @@
-package com.example.githubappmanager.data
+package com.example.githubappmanager.domain.model
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable

@@ -1,4 +1,4 @@
-package com.example.githubappmanager.data
+package com.example.githubappmanager.data.local
 
 import android.content.Context
 import androidx.datastore.core.DataStore
@@ -6,7 +6,13 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
-import kotlinx.coroutines.flow.*
+import com.example.githubappmanager.domain.model.AppInstallStatus
+import com.example.githubappmanager.domain.model.GitHubRelease
+import com.example.githubappmanager.domain.model.GitHubRepo
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.map
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json

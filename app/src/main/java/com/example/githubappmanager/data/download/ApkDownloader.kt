@@ -1,4 +1,4 @@
-package com.example.githubappmanager.utils
+package com.example.githubappmanager.data.download
 
 import android.content.Context
 import kotlinx.coroutines.Dispatchers

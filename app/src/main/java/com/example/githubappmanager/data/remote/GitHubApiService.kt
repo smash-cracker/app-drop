@@ -1,6 +1,6 @@
-package com.example.githubappmanager.network
+package com.example.githubappmanager.data.remote
 
-import com.example.githubappmanager.data.GitHubRelease
+import com.example.githubappmanager.domain.model.GitHubRelease
 import kotlinx.serialization.json.Json
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient

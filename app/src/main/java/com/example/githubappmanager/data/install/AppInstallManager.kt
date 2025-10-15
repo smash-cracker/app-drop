@@ -1,16 +1,15 @@
-package com.example.githubappmanager.utils
+package com.example.githubappmanager.data.install
 
 import android.content.Context
 import android.content.Intent
-import android.content.pm.PackageInfo
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.util.Log
 import androidx.core.content.FileProvider
-import com.example.githubappmanager.data.AppInfo
-import com.example.githubappmanager.data.AppInstallStatus
-import com.example.githubappmanager.data.GitHubRelease
+import com.example.githubappmanager.domain.model.AppInfo
+import com.example.githubappmanager.domain.model.AppInstallStatus
+import com.example.githubappmanager.domain.model.GitHubRelease
 import java.io.File
 
 class AppInstallManager(private val context: Context) {

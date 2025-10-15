@@ -1,16 +1,20 @@
-package com.example.githubappmanager
+package com.example.githubappmanager.feature.main
 
 import android.app.Application
 import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.githubappmanager.data.GitHubRepo
-import com.example.githubappmanager.data.RepoDataStore
-import com.example.githubappmanager.network.GitHubApiClient
-import com.example.githubappmanager.utils.AppInstallManager
-import com.example.githubappmanager.utils.ApkDownloader
-import com.example.githubappmanager.utils.DownloadProgress
-import kotlinx.coroutines.flow.*
+import com.example.githubappmanager.data.download.ApkDownloader
+import com.example.githubappmanager.data.download.DownloadProgress
+import com.example.githubappmanager.data.install.AppInstallManager
+import com.example.githubappmanager.data.local.RepoDataStore
+import com.example.githubappmanager.data.remote.GitHubApiClient
+import com.example.githubappmanager.domain.model.AppInstallStatus
+import com.example.githubappmanager.domain.model.GitHubRepo
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 
 class RepoViewModel(application: Application) : AndroidViewModel(application) {
@@ -73,7 +77,7 @@ class RepoViewModel(application: Application) : AndroidViewModel(application) {
                 val packageName = appInstallManager.guessPackageName(baseRepo.owner, baseRepo.name)
                 val installStatus = release?.let {
                     appInstallManager.checkInstallStatus(it, packageName)
-                } ?: com.example.githubappmanager.data.AppInstallStatus.UNKNOWN
+                } ?: AppInstallStatus.UNKNOWN
 
                 val repoWithRelease = baseRepo.copy(
                     latestRelease = release,

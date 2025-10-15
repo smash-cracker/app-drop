@@ -1,38 +1,42 @@
-package com.example.githubappmanager.widgets
+package com.example.githubappmanager.feature.common.components
 
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.githubappmanager.RepoViewModel
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 
-/**
- * A unified SearchBar for searching repos or adding a new GitHub repo directly.
- *
- * - If the input is a valid GitHub repo URL, pressing Enter will add it.
- * - Otherwise, pressing Enter will trigger a search via onQueryChange.
- *
- * @param query Current search query
- * @param onQueryChange Lambda to update search filter in parent
- * @param modifier Optional Modifier
- * @param onError Optional lambda to show validation errors
- */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SearchBar(
     query: String,
     onQueryChange: (String) -> Unit,
+    onSubmitUrl: (String) -> Unit,
+    onClearRecentlyViewed: () -> Unit,
     modifier: Modifier = Modifier,
     onError: ((String) -> Unit)? = null
 ) {
-    var inputText by remember { mutableStateOf(query) }
-    val viewModel: RepoViewModel = viewModel()
+    var inputText by rememberSaveable { mutableStateOf(query) }
     val error = remember(inputText) { validateGithubUrl(inputText) }
     val isValid = error == null
 
@@ -56,11 +60,10 @@ fun SearchBar(
                 onDone = {
                     if (inputText.isBlank()) return@KeyboardActions
                     if (isValid) {
-                        // Add repo directly if valid URL
-                        viewModel.addRepo(inputText.trim())
+                        onSubmitUrl(inputText.trim())
                         inputText = ""
+                        onQueryChange("")
                     } else {
-                        // Otherwise treat it as search query
                         onQueryChange(inputText)
                         onError?.invoke(error ?: "Invalid URL")
                     }
@@ -83,7 +86,7 @@ fun SearchBar(
             )
 
             TextButton(
-                onClick = { viewModel.clearRecentlyViewed() },
+                onClick = onClearRecentlyViewed,
                 contentPadding = PaddingValues(0.dp)
             ) {
                 Text("Clear All")

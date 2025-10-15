@@ -1,4 +1,4 @@
-package com.example.githubappmanager.data
+package com.example.githubappmanager.domain.model
 
 data class GitHubRepo(
     val url: String,
