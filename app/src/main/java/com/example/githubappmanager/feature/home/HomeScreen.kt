@@ -22,6 +22,7 @@ fun HomeScreen(
     onInstallApp: (GitHubRepo) -> Unit,
     onUninstallApp: (GitHubRepo) -> Unit,
     onClearProgress: (GitHubRepo) -> Unit,
+    onRepoClick: (GitHubRepo) -> Unit,
     modifier: Modifier = Modifier
 ) {
     if (repos.isEmpty()) {
@@ -39,7 +40,8 @@ fun HomeScreen(
                     onRefresh = { onRefreshRepo(repo) },
                     onInstall = { onInstallApp(repo) },
                     onUninstall = { onUninstallApp(repo) },
-                    onClearProgress = { onClearProgress(repo) }
+                    onClearProgress = { onClearProgress(repo) },
+                    onClick = { onRepoClick(repo) }
                 )
             }
         }

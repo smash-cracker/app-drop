@@ -31,6 +31,7 @@ fun SearchScreen(
     onUninstallApp: (GitHubRepo) -> Unit,
     onAddRepo: (String) -> Unit,
     onClearRecentlyViewed: () -> Unit,
+    onRepoClick: (GitHubRepo) -> Unit,
     modifier: Modifier = Modifier
 ) {
     var searchQuery by rememberSaveable { mutableStateOf("") }
@@ -69,7 +70,8 @@ fun SearchScreen(
                         onRefresh = { onRefreshRepo(repo) },
                         onInstall = { onInstallApp(repo) },
                         onUninstall = { onUninstallApp(repo) },
-                        onClearProgress = {}
+                        onClearProgress = {},
+                        onClick = { onRepoClick(repo) }
                     )
                 }
             }

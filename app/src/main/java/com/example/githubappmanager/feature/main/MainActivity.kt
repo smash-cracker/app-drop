@@ -23,6 +23,8 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Surface
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -37,10 +39,12 @@ import androidx.compose.ui.Alignment
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.compose.ui.unit.dp
+import com.example.githubappmanager.domain.model.GitHubRepo
 import com.example.githubappmanager.feature.home.HomeScreen
 import com.example.githubappmanager.feature.main.components.AddRepoDialog
 import com.example.githubappmanager.feature.search.SearchScreen
 import com.example.githubappmanager.feature.explore.ExploreScreen
+import com.example.githubappmanager.feature.details.RepoDetailScreen
 import com.example.githubappmanager.ui.theme.GithubAppManagerTheme
 
 class MainActivity : ComponentActivity() {
@@ -63,82 +67,97 @@ fun GithubAppManagerApp() {
         val downloadProgress by viewModel.downloadProgress.collectAsState()
 
         val snackbarHostState = remember { SnackbarHostState() }
-        var showAddDialog by rememberSaveable { mutableStateOf(false) }
         var selectedTab by rememberSaveable { mutableStateOf(MainTab.HOME) }
+        var selectedRepo by remember { mutableStateOf<GitHubRepo?>(null) }
 
-        Scaffold(
-            modifier = Modifier,
-            snackbarHost = { SnackbarHost(snackbarHostState) },
-            topBar = { CenterAlignedTopAppBar(title = { Text("GitHub App Manager") }) },
-            bottomBar = {
-                NavigationBar {
-                    MainTab.entries.forEach { tab ->
-                        NavigationBarItem(
-                            selected = selectedTab == tab,
-                            onClick = { selectedTab = tab },
-                            icon = { Icon(tab.icon, contentDescription = tab.label) },
-                            label = { Text(tab.label) }
-                        )
-                    }
-                }
-            },
-            floatingActionButton = {
-                FloatingActionButton(onClick = { showAddDialog = true }) {
-                    Icon(Icons.Filled.Add, contentDescription = "Add Repository")
-                }
-            },
-        ) { innerPadding ->
-            when (selectedTab) {
-                MainTab.HOME -> HomeScreen(
-                    repos = repos,
-                    downloadProgress = downloadProgress,
-                    onRefreshRepo = { repo -> viewModel.refreshRepo(repo) },
-                    onInstallApp = { repo -> viewModel.downloadAndInstallApk(repo) },
-                    onUninstallApp = { repo ->
-                        repo.packageName?.let { viewModel.uninstallApp(it) } ?: Log.w(
-                            "MainActivity",
-                            "Uninstall clicked but packageName is null for ${repo.url}"
-                        )
-                    },
-                    onClearProgress = { repo -> viewModel.clearDownloadProgress(repo.url) },
-                    modifier = Modifier.padding(innerPadding)
-                )
-
-                MainTab.EXPLORE -> ExploreScreen(
-                    modifier = Modifier
-                        .padding(innerPadding)
-                        .fillMaxSize()
-                )
-
-                MainTab.SEARCH -> SearchScreen(
-                    repos = recentlyViewed,
-                    downloadProgress = downloadProgress,
-                    onRefreshRepo = { repo -> viewModel.refreshRepo(repo) },
-                    onInstallApp = { repo -> viewModel.downloadAndInstallApk(repo) },
-                    onUninstallApp = { repo -> repo.packageName?.let { viewModel.uninstallApp(it) } },
-                    onAddRepo = { url -> viewModel.addRepo(url) },
-                    onClearRecentlyViewed = { viewModel.clearRecentlyViewed() },
-                    modifier = Modifier
-                        .padding(innerPadding)
-                        .fillMaxSize()
-                )
-
-                MainTab.BOOKMARK -> BookmarkPlaceholder(
-                    modifier = Modifier
-                        .padding(innerPadding)
-                        .fillMaxSize()
-                )
-            }
+        val activeDetailRepo = selectedRepo?.let { current ->
+            repos.find { it.url == current.url } ?: current
         }
 
-        if (showAddDialog) {
-            AddRepoDialog(
-                onDismiss = { showAddDialog = false },
-                onConfirm = { url ->
-                    viewModel.addRepo(url)
-                    showAddDialog = false
+        Box(modifier = Modifier.fillMaxSize()) {
+            Scaffold(
+                modifier = Modifier.fillMaxSize(),
+                snackbarHost = { SnackbarHost(snackbarHostState) },
+                topBar = { CenterAlignedTopAppBar(title = { Text("GitHub App Manager") }) },
+                bottomBar = {
+                    NavigationBar {
+                        MainTab.entries.forEach { tab ->
+                            NavigationBarItem(
+                                selected = selectedTab == tab,
+                                onClick = { selectedTab = tab },
+                                icon = { Icon(tab.icon, contentDescription = tab.label) },
+                                label = { Text(tab.label) }
+                            )
+                        }
+                    }
+                },
+            ) { innerPadding ->
+                when (selectedTab) {
+                    MainTab.HOME -> HomeScreen(
+                        repos = repos,
+                        downloadProgress = downloadProgress,
+                        onRefreshRepo = { repo -> viewModel.refreshRepo(repo) },
+                        onInstallApp = { repo -> viewModel.downloadAndInstallApk(repo) },
+                        onUninstallApp = { repo ->
+                            repo.packageName?.let { viewModel.uninstallApp(it) } ?: Log.w(
+                                "MainActivity",
+                                "Uninstall clicked but packageName is null for ${repo.url}"
+                            )
+                        },
+                        onClearProgress = { repo -> viewModel.clearDownloadProgress(repo.url) },
+                        onRepoClick = { repo -> selectedRepo = repo },
+                        modifier = Modifier.padding(innerPadding)
+                    )
+
+                    MainTab.EXPLORE -> ExploreScreen(
+                        modifier = Modifier
+                            .padding(innerPadding)
+                            .fillMaxSize(),
+                        onRepoClick = { repo -> selectedRepo = repo }
+                    )
+
+                    MainTab.SEARCH -> SearchScreen(
+                        repos = recentlyViewed,
+                        downloadProgress = downloadProgress,
+                        onRefreshRepo = { repo -> viewModel.refreshRepo(repo) },
+                        onInstallApp = { repo -> viewModel.downloadAndInstallApk(repo) },
+                        onUninstallApp = { repo -> repo.packageName?.let { viewModel.uninstallApp(it) } },
+                        onAddRepo = { url -> viewModel.addRepo(url) },
+                        onClearRecentlyViewed = { viewModel.clearRecentlyViewed() },
+                        onRepoClick = { repo -> selectedRepo = repo },
+                        modifier = Modifier
+                            .padding(innerPadding)
+                            .fillMaxSize()
+                    )
+
+                    MainTab.BOOKMARK -> BookmarkPlaceholder(
+                        modifier = Modifier
+                            .padding(innerPadding)
+                            .fillMaxSize()
+                    )
                 }
-            )
+            }
+
+            activeDetailRepo?.let { repo ->
+                Surface(
+                    modifier = Modifier.fillMaxSize(),
+                    color = MaterialTheme.colorScheme.surface
+                ) {
+                    RepoDetailScreen(
+                        repo = repo,
+                        downloadProgress = downloadProgress[repo.url],
+                        onRefresh = { viewModel.refreshRepo(repo) },
+                        onInstall = { viewModel.downloadAndInstallApk(repo) },
+                        onUninstall = {
+                            repo.packageName?.let { viewModel.uninstallApp(it) } ?: Log.w(
+                                "MainActivity",
+                                "Uninstall requested but packageName is null for ${repo.url}"
+                            )
+                        },
+                        onBack = { selectedRepo = null }
+                    )
+                }
+            }
         }
     }
 }

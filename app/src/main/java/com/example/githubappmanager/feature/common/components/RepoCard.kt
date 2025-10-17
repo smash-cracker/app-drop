@@ -38,12 +38,12 @@ fun RepoCard(
     onInstall: () -> Unit,
     onUninstall: () -> Unit,
     onClearProgress: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onClick: (() -> Unit)? = null
 ) {
-    Card(
-        modifier = modifier.fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-    ) {
+    val cardModifier = modifier.fillMaxWidth()
+
+    val cardContent: @Composable () -> Unit = {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -191,6 +191,23 @@ fun RepoCard(
                     }
                 }
             }
+        }
+    }
+
+    if (onClick != null) {
+        Card(
+            modifier = cardModifier,
+            onClick = onClick,
+            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        ) {
+            cardContent()
+        }
+    } else {
+        Card(
+            modifier = cardModifier,
+            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        ) {
+            cardContent()
         }
     }
 }
