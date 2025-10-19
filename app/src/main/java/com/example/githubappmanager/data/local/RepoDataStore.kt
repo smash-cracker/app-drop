@@ -31,7 +31,8 @@ data class SerializableGitHubRepo(
     val installStatus: AppInstallStatus = AppInstallStatus.UNKNOWN,
     val stargazersCount: Int = 0,
     val forksCount: Int = 0,
-    val watchersCount: Int = 0
+    val watchersCount: Int = 0,
+    val apkSizeBytes: Long? = null
 )
 
 class RepoDataStore(private val context: Context) {
@@ -57,7 +58,8 @@ class RepoDataStore(private val context: Context) {
                         installStatus = it.installStatus,
                         stargazersCount = it.stargazersCount,
                         forksCount = it.forksCount,
-                        watchersCount = it.watchersCount
+                        watchersCount = it.watchersCount,
+                        apkSizeBytes = it.apkSizeBytes
                     )
                 }
             } catch (e: Exception) {
@@ -85,7 +87,8 @@ class RepoDataStore(private val context: Context) {
                 installStatus = repo.installStatus,
                 stargazersCount = repo.stargazersCount,
                 forksCount = repo.forksCount,
-                watchersCount = repo.watchersCount
+                watchersCount = repo.watchersCount,
+                apkSizeBytes = repo.apkSizeBytes
             )
 
             preferences[reposKey] = Json.encodeToString(updatedRepos)
@@ -127,7 +130,8 @@ class RepoDataStore(private val context: Context) {
                         installStatus = repo.installStatus,
                         stargazersCount = repo.stargazersCount,
                         forksCount = repo.forksCount,
-                        watchersCount = repo.watchersCount
+                        watchersCount = repo.watchersCount,
+                        apkSizeBytes = repo.apkSizeBytes
                     )
                 } else existingRepo
             }

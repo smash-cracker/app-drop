@@ -1,6 +1,7 @@
 package com.example.githubappmanager.feature.details
 
 import android.graphics.drawable.Drawable
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -8,8 +9,17 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
-import androidx.activity.compose.BackHandler
-import androidx.compose.material3.*
+import androidx.compose.material3.Button
+import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.material3.Divider
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -27,6 +37,7 @@ import coil.compose.AsyncImage
 import com.example.githubappmanager.data.download.DownloadProgress
 import com.example.githubappmanager.domain.model.AppInstallStatus
 import com.example.githubappmanager.domain.model.GitHubRepo
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -92,6 +103,8 @@ private fun RepoDetailContent(
             }
         } else null
     }
+
+    val formattedApkSize = remember(repo.apkSizeBytes, release?.assets) { formatApkSize(repo) }
 
     Column(
         modifier = Modifier
@@ -166,9 +179,9 @@ private fun RepoDetailContent(
             }
 
             Divider(
-        modifier = Modifier
-            .height(24.dp)
-            .width(1.dp),
+                modifier = Modifier
+                    .height(24.dp)
+                    .width(1.dp),
                 color = MaterialTheme.colorScheme.outlineVariant
             )
 
@@ -181,17 +194,17 @@ private fun RepoDetailContent(
                     modifier = Modifier.size(18.dp)
                 )
                 Text(
-                    text = "50 MB",
+                    text = formattedApkSize,
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
 
-    // Vertical divider
+            // Vertical divider
             Divider(
-        modifier = Modifier
-            .height(24.dp)
-            .width(1.dp),
+                modifier = Modifier
+                    .height(24.dp)
+                    .width(1.dp),
                 color = MaterialTheme.colorScheme.outlineVariant
             )
 
@@ -373,6 +386,16 @@ private fun StatusActions(
             }
         }
     }
+}
+
+private fun formatApkSize(repo: GitHubRepo): String {
+    val sizeBytes = repo.apkSizeBytes
+        ?: repo.latestRelease?.preferredApk?.size
+        ?: repo.latestRelease?.androidAssets?.firstOrNull()?.size
+        ?: return "—"
+
+    val megaBytes = sizeBytes.toDouble() / (1024 * 1024)
+    return String.format(Locale.US, "%.1f MB", megaBytes)
 }
 
 @Composable

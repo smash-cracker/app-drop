@@ -10,7 +10,8 @@ data class GitHubRepo(
     val installStatus: AppInstallStatus = AppInstallStatus.UNKNOWN,
     val stargazersCount: Int = 0,
     val forksCount: Int = 0,
-    val watchersCount: Int = 0
+    val watchersCount: Int = 0,
+    val apkSizeBytes: Long? = null
 ) {
     companion object {
         fun fromUrl(url: String): GitHubRepo {

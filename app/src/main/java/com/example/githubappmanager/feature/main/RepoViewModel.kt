@@ -10,6 +10,7 @@ import com.example.githubappmanager.data.install.AppInstallManager
 import com.example.githubappmanager.data.local.RepoDataStore
 import com.example.githubappmanager.data.remote.GitHubApiClient
 import com.example.githubappmanager.domain.model.AppInstallStatus
+import com.example.githubappmanager.domain.model.GitHubRelease
 import com.example.githubappmanager.domain.model.GitHubRepo
 import com.example.githubappmanager.domain.model.withInfo
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -86,10 +87,13 @@ class RepoViewModel(application: Application) : AndroidViewModel(application) {
                     appInstallManager.checkInstallStatus(it, packageName)
                 } ?: AppInstallStatus.UNKNOWN
 
+                val apkSizeBytes = release.extractApkSize()
+
                 val repoWithRelease = baseRepo.copy(
                     latestRelease = release,
                     packageName = packageName,
-                    installStatus = installStatus
+                    installStatus = installStatus,
+                    apkSizeBytes = apkSizeBytes
                 )
 
                 val enrichedRepo = repoInfo?.let { repoWithRelease.withInfo(it) } ?: repoWithRelease
@@ -115,10 +119,13 @@ class RepoViewModel(application: Application) : AndroidViewModel(application) {
                     null
                 }
 
+                val apkSizeBytes = release.extractApkSize()
+
                 val updatedRepo = repo.copy(
                     latestRelease = release,
                     packageName = packageName,
-                    installStatus = installStatus
+                    installStatus = installStatus,
+                    apkSizeBytes = apkSizeBytes
                 ).let { current ->
                     repoInfo?.let { current.withInfo(it) } ?: current
                 }
@@ -176,5 +183,10 @@ class RepoViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             repoDataStore.clearAllRepos()
         }
+    }
+
+    private fun GitHubRelease?.extractApkSize(): Long? {
+        val release = this ?: return null
+        return release.preferredApk?.size ?: release.androidAssets.firstOrNull()?.size
     }
 }
