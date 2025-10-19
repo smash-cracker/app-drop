@@ -41,7 +41,6 @@ android {
 }
 
 dependencies {
-
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
@@ -65,6 +64,12 @@ dependencies {
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
     implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
     implementation(libs.androidx.compose.foundation)
+    implementation("io.coil-kt:coil-compose:2.7.0")
+    
+    // Markdown parsing for README
+    implementation("com.vladsch.flexmark:flexmark:0.64.8")
+    implementation("com.vladsch.flexmark:flexmark-util:0.64.8")
+    
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

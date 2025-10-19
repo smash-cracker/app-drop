@@ -1,42 +1,35 @@
 package com.example.githubappmanager.feature.details
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
+import android.graphics.drawable.Drawable
+import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.CloudDownload
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Refresh
-import androidx.activity.compose.BackHandler
-import androidx.compose.material3.Button
-import androidx.compose.material3.CenterAlignedTopAppBar
-import androidx.compose.material3.Divider
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.LinearProgressIndicator
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.core.graphics.drawable.toBitmap
+import coil.compose.AsyncImage
 import com.example.githubappmanager.data.download.DownloadProgress
 import com.example.githubappmanager.domain.model.AppInstallStatus
 import com.example.githubappmanager.domain.model.GitHubRepo
+import com.example.githubappmanager.domain.model.GitHubRepoInfo
+import com.example.githubappmanager.data.remote.GitHubApiClient
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -88,6 +81,31 @@ private fun RepoDetailContent(
     contentPadding: PaddingValues
 ) {
     val release = repo.latestRelease
+    val context = LocalContext.current
+    val isInstalled = repo.installStatus == AppInstallStatus.INSTALLED_CURRENT || repo.installStatus == AppInstallStatus.INSTALLED_OUTDATED
+
+    val painter: Painter? = remember(repo.packageName, isInstalled) {
+        if (isInstalled && repo.packageName != null) {
+            try {
+                val drawable: Drawable = context.packageManager.getApplicationIcon(repo.packageName)
+                androidx.compose.ui.graphics.painter.BitmapPainter(drawable.toBitmap().asImageBitmap())
+            } catch (e: Exception) {
+                null
+            }
+        } else null
+    }
+
+    // 🆕 Load dynamic GitHub info
+    val repoInfo = remember { androidx.compose.runtime.mutableStateOf<GitHubRepoInfo?>(null) }
+
+    androidx.compose.runtime.LaunchedEffect(repo.owner, repo.name) {
+        try {
+            val info = GitHubApiClient.apiService.getRepoInfo(repo.owner, repo.name)
+            repoInfo.value = info
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -97,19 +115,130 @@ private fun RepoDetailContent(
             .verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        Text(
-            text = repo.url,
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
+        // App icon + name + owner
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            if (painter != null) {
+                Image(
+                    painter = painter,
+                    contentDescription = "App icon",
+                    modifier = Modifier
+                        .size(80.dp)
+                        .clip(CircleShape),
+                    contentScale = ContentScale.Crop
+                )
+            } else {
+                AsyncImage(
+                    model = "https://avatars.githubusercontent.com/${repo.owner}",
+                    contentDescription = "Owner avatar",
+                    modifier = Modifier
+                        .size(80.dp)
+                        .clip(CircleShape),
+                    contentScale = ContentScale.Crop
+                )
+            }
+            Spacer(modifier = Modifier.width(16.dp))
+            Column {
+                Text(
+                    text = repo.displayName,
+                    style = MaterialTheme.typography.titleLarge
+                )
+                Text(
+                    text = repo.owner,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
 
-        Divider()
+        // 🌟 Info row (Dynamic)
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 8.dp),
+            horizontalArrangement = Arrangement.SpaceEvenly,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // ⭐ Stars
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = Icons.Filled.Star,
+                        contentDescription = "Stars",
+                        tint = Color(0xFFFFD700),
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = "${repoInfo.value?.stargazersCount ?: 0}★",
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
+                Text(
+                    text = "Stars",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
 
-        Text(
-            text = "App Status",
-            style = MaterialTheme.typography.titleMedium
-        )
+            Divider(
+                modifier = Modifier
+                    .height(24.dp)
+                    .width(1.dp),
+                color = MaterialTheme.colorScheme.outlineVariant
+            )
 
+            // 🍴 Forks
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Icon(
+                    imageVector = Icons.Filled.ForkLeft,
+                    contentDescription = "Forks",
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(18.dp)
+                )
+                Text(
+                    text = "${repoInfo.value?.forksCount ?: 0}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Text(
+                    text = "Forks",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+
+            Divider(
+                modifier = Modifier
+                    .height(24.dp)
+                    .width(1.dp),
+                color = MaterialTheme.colorScheme.outlineVariant
+            )
+
+            // 👁 Watchers
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Icon(
+                    imageVector = Icons.Filled.Visibility,
+                    contentDescription = "Watchers",
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(18.dp)
+                )
+                Text(
+                    text = "${repoInfo.value?.watchersCount ?: 0}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Text(
+                    text = "Watchers",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+
+        // --- Existing release/download UI ---
         when {
             downloadProgress?.error != null -> {
                 Text(
@@ -151,11 +280,6 @@ private fun RepoDetailContent(
             Text(
                 text = "Latest Release",
                 style = MaterialTheme.typography.titleMedium
-            )
-            Text(
-                text = it.tagName,
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.primary
             )
             it.name?.let { name ->
                 Text(
@@ -271,7 +395,7 @@ private fun StatusActions(
 @Composable
 private fun PrimaryActionButton(
     text: String,
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    icon: ImageVector,
     onClick: () -> Unit,
     enabled: Boolean = true
 ) {

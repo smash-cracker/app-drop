@@ -7,17 +7,20 @@ data class GitHubRepo(
     val addedAt: Long = System.currentTimeMillis(),
     val latestRelease: GitHubRelease? = null,
     val packageName: String? = null,
-    val installStatus: AppInstallStatus = AppInstallStatus.UNKNOWN
+    val installStatus: AppInstallStatus = AppInstallStatus.UNKNOWN,
+    val stargazersCount: Int = 0,
+    val forksCount: Int = 0,
+    val watchersCount: Int = 0
 ) {
     companion object {
         fun fromUrl(url: String): GitHubRepo {
             val cleanUrl = url.trim().removePrefix("https://").removePrefix("http://")
                 .removePrefix("www.").removeSuffix(".git").removeSuffix("/")
-            
+
             val parts = cleanUrl.split("/")
             val owner = if (parts.size >= 2) parts[1] else "unknown"
             val name = if (parts.size >= 3) parts[2] else "unknown"
-            
+
             return GitHubRepo(
                 url = url.trim(),
                 name = name,
@@ -25,6 +28,6 @@ data class GitHubRepo(
             )
         }
     }
-    
+
     val displayName: String get() = "$owner/$name"
 }
