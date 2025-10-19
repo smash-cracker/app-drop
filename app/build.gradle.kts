@@ -69,7 +69,8 @@ dependencies {
     // Markdown parsing for README
     implementation("com.vladsch.flexmark:flexmark:0.64.8")
     implementation("com.vladsch.flexmark:flexmark-util:0.64.8")
-    
+    implementation("com.github.jeziellago:compose-markdown:0.5.7")
+
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

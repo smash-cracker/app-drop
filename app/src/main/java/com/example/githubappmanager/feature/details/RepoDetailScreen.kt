@@ -37,6 +37,7 @@ import coil.compose.AsyncImage
 import com.example.githubappmanager.data.download.DownloadProgress
 import com.example.githubappmanager.domain.model.AppInstallStatus
 import com.example.githubappmanager.domain.model.GitHubRepo
+import dev.jeziellago.compose.markdowntext.MarkdownText
 import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -285,11 +286,11 @@ private fun RepoDetailContent(
             if (!it.body.isNullOrBlank()) {
                 var expanded by remember { mutableStateOf(false) }
                 Column {
-                    Text(
-                        text = it.body,
+                    MarkdownText(
+                        modifier = Modifier.fillMaxWidth(),
+                        markdown = it.body,
                         style = MaterialTheme.typography.bodyMedium,
-                        maxLines = if (expanded) Int.MAX_VALUE else 3,
-                        overflow = TextOverflow.Ellipsis
+                        maxLines = if (expanded) Int.MAX_VALUE else 3
                     )
                     TextButton(onClick = { expanded = !expanded }) {
                         Text(if (expanded) "Show less" else "See more")
