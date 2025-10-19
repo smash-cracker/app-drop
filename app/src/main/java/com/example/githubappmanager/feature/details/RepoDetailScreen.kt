@@ -164,27 +164,24 @@ Row(
     horizontalArrangement = Arrangement.SpaceEvenly,
     verticalAlignment = Alignment.CenterVertically
 ) {
-            // ⭐ Stars
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Icon(
-                imageVector = Icons.Filled.Star,
-                        contentDescription = "Stars",
-                tint = Color(0xFFFFD700),
-                modifier = Modifier.size(18.dp)
-            )
-            Spacer(modifier = Modifier.width(4.dp))
-            Text(
-                        text = "${repoInfo.value?.stargazersCount ?: 0}",
-                style = MaterialTheme.typography.bodySmall
-            )
-        }
-        Text(
-                    text = "reviews",
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-    }
+         // ⭐ Stars
+Column(
+    horizontalAlignment = Alignment.CenterHorizontally,
+    verticalArrangement = Arrangement.Center
+) {
+    Icon(
+        imageVector = Icons.Filled.Star,
+        contentDescription = "Stars",
+        tint = Color(0xFFFFD700),
+        modifier = Modifier.size(20.dp)
+    )
+    Spacer(modifier = Modifier.height(4.dp))
+    Text(
+        text = "${repoInfo.value?.stargazersCount ?: 0}",
+        style = MaterialTheme.typography.bodySmall
+    )
+}
+
 
     Divider(
         modifier = Modifier
