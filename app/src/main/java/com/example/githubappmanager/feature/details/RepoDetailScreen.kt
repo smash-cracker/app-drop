@@ -284,19 +284,22 @@ private fun RepoDetailContent(
             Spacer(modifier = Modifier.height(8.dp))
 
             if (!it.body.isNullOrBlank()) {
-                var expanded by remember { mutableStateOf(false) }
-                Column {
+    var expanded by remember { mutableStateOf(false) }
+    Column {
                     MarkdownText(
                         modifier = Modifier.fillMaxWidth(),
                         markdown = it.body,
-                        style = MaterialTheme.typography.bodyMedium,
+            style = MaterialTheme.typography.bodyMedium,
                         maxLines = if (expanded) Int.MAX_VALUE else 3
-                    )
-                    TextButton(onClick = { expanded = !expanded }) {
-                        Text(if (expanded) "Show less" else "See more")
-                    }
-                }
-            }
+        )
+        TextButton(onClick = { expanded = !expanded }) {
+            Text(
+                text = if (expanded) "Show less" else "See more",
+                color = Color(0xFF005F73) // <-- Added color here
+            )
+        }
+    }
+}
         } ?: run {
             Divider()
             Text(
