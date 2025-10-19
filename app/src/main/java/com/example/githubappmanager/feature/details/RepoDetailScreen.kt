@@ -1,7 +1,6 @@
 package com.example.githubappmanager.feature.details
 
 import android.graphics.drawable.Drawable
-import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -9,6 +8,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
+import androidx.activity.compose.BackHandler
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -28,8 +28,11 @@ import coil.compose.AsyncImage
 import com.example.githubappmanager.data.download.DownloadProgress
 import com.example.githubappmanager.domain.model.AppInstallStatus
 import com.example.githubappmanager.domain.model.GitHubRepo
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.core.graphics.drawable.toBitmap
 import com.example.githubappmanager.domain.model.GitHubRepoInfo
 import com.example.githubappmanager.data.remote.GitHubApiClient
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -154,89 +157,80 @@ private fun RepoDetailContent(
         }
 
         // 🌟 Info row (Dynamic)
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 8.dp),
-            horizontalArrangement = Arrangement.SpaceEvenly,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
+Row(
+    modifier = Modifier
+        .fillMaxWidth()
+        .padding(top = 8.dp),
+    horizontalArrangement = Arrangement.SpaceEvenly,
+    verticalAlignment = Alignment.CenterVertically
+) {
             // ⭐ Stars
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        imageVector = Icons.Filled.Star,
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(
+                imageVector = Icons.Filled.Star,
                         contentDescription = "Stars",
-                        tint = Color(0xFFFFD700),
-                        modifier = Modifier.size(18.dp)
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text(
-                        text = "${repoInfo.value?.stargazersCount ?: 0}★",
-                        style = MaterialTheme.typography.bodySmall
-                    )
-                }
-                Text(
-                    text = "Stars",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-
-            Divider(
-                modifier = Modifier
-                    .height(24.dp)
-                    .width(1.dp),
-                color = MaterialTheme.colorScheme.outlineVariant
+                tint = Color(0xFFFFD700),
+                modifier = Modifier.size(18.dp)
             )
-
-            // 🍴 Forks
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Icon(
-                    imageVector = Icons.Filled.ForkLeft,
-                    contentDescription = "Forks",
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(18.dp)
-                )
-                Text(
-                    text = "${repoInfo.value?.forksCount ?: 0}",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Text(
-                    text = "Forks",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-
-            Divider(
-                modifier = Modifier
-                    .height(24.dp)
-                    .width(1.dp),
-                color = MaterialTheme.colorScheme.outlineVariant
+            Spacer(modifier = Modifier.width(4.dp))
+            Text(
+                        text = "${repoInfo.value?.stargazersCount ?: 0}",
+                style = MaterialTheme.typography.bodySmall
             )
-
-            // 👁 Watchers
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Icon(
-                    imageVector = Icons.Filled.Visibility,
-                    contentDescription = "Watchers",
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(18.dp)
-                )
-                Text(
-                    text = "${repoInfo.value?.watchersCount ?: 0}",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Text(
-                    text = "Watchers",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
         }
+        Text(
+                    text = "reviews",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+    }
+
+    Divider(
+        modifier = Modifier
+            .height(24.dp)
+            .width(1.dp),
+        color = MaterialTheme.colorScheme.outlineVariant
+    )
+
+    // 📦 Size
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Icon(
+            imageVector = Icons.Filled.CloudDownload,
+            contentDescription = "App Size",
+            tint = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.size(18.dp)
+        )
+        Text(
+            text = "50 MB",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+    }
+
+    // Vertical divider
+    Divider(
+        modifier = Modifier
+            .height(24.dp)
+            .width(1.dp),
+        color = MaterialTheme.colorScheme.outlineVariant
+    )
+
+    // 🔢 Version
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Icon(
+            imageVector = Icons.Filled.Info,
+            contentDescription = "Version",
+            tint = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.size(18.dp)
+        )
+        Text(
+            text = release?.tagName ?: "v1.0",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+    }
+}
 
         // --- Existing release/download UI ---
         when {
