@@ -11,6 +11,7 @@ import com.example.githubappmanager.data.local.RepoDataStore
 import com.example.githubappmanager.data.remote.GitHubApiClient
 import com.example.githubappmanager.domain.model.AppInstallStatus
 import com.example.githubappmanager.domain.model.GitHubRepo
+import com.example.githubappmanager.domain.model.withInfo
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -74,6 +75,12 @@ class RepoViewModel(application: Application) : AndroidViewModel(application) {
                     null
                 }
 
+                val repoInfo = try {
+                    apiService.getRepoInfo(baseRepo.owner, baseRepo.name)
+                } catch (e: Exception) {
+                    null
+                }
+
                 val packageName = appInstallManager.guessPackageName(baseRepo.owner, baseRepo.name)
                 val installStatus = release?.let {
                     appInstallManager.checkInstallStatus(it, packageName)
@@ -85,8 +92,10 @@ class RepoViewModel(application: Application) : AndroidViewModel(application) {
                     installStatus = installStatus
                 )
 
-                repoDataStore.addRepo(repoWithRelease)
-                addRecentlyViewed(repoWithRelease)
+                val enrichedRepo = repoInfo?.let { repoWithRelease.withInfo(it) } ?: repoWithRelease
+
+                repoDataStore.addRepo(enrichedRepo)
+                addRecentlyViewed(enrichedRepo)
             } finally {
                 _isLoading.value = false
             }
@@ -100,11 +109,19 @@ class RepoViewModel(application: Application) : AndroidViewModel(application) {
                 val packageName = repo.packageName ?: appInstallManager.guessPackageName(repo.owner, repo.name)
                 val installStatus = appInstallManager.checkInstallStatus(release, packageName)
 
+                val repoInfo = try {
+                    apiService.getRepoInfo(repo.owner, repo.name)
+                } catch (e: Exception) {
+                    null
+                }
+
                 val updatedRepo = repo.copy(
                     latestRelease = release,
                     packageName = packageName,
                     installStatus = installStatus
-                )
+                ).let { current ->
+                    repoInfo?.let { current.withInfo(it) } ?: current
+                }
 
                 repoDataStore.updateRepo(updatedRepo)
                 addRecentlyViewed(updatedRepo)

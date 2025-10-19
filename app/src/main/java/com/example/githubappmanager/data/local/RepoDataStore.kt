@@ -28,7 +28,10 @@ data class SerializableGitHubRepo(
     val addedAt: Long,
     val latestRelease: GitHubRelease? = null,
     val packageName: String? = null,
-    val installStatus: AppInstallStatus = AppInstallStatus.UNKNOWN
+    val installStatus: AppInstallStatus = AppInstallStatus.UNKNOWN,
+    val stargazersCount: Int = 0,
+    val forksCount: Int = 0,
+    val watchersCount: Int = 0
 )
 
 class RepoDataStore(private val context: Context) {
@@ -45,13 +48,16 @@ class RepoDataStore(private val context: Context) {
                 val serializable = Json.decodeFromString<List<SerializableGitHubRepo>>(jsonString)
                 serializable.map {
                     GitHubRepo(
-                        it.url,
-                        it.name,
-                        it.owner,
-                        it.addedAt,
-                        it.latestRelease,
-                        it.packageName,
-                        it.installStatus
+                        url = it.url,
+                        name = it.name,
+                        owner = it.owner,
+                        addedAt = it.addedAt,
+                        latestRelease = it.latestRelease,
+                        packageName = it.packageName,
+                        installStatus = it.installStatus,
+                        stargazersCount = it.stargazersCount,
+                        forksCount = it.forksCount,
+                        watchersCount = it.watchersCount
                     )
                 }
             } catch (e: Exception) {
@@ -76,7 +82,10 @@ class RepoDataStore(private val context: Context) {
                 addedAt = repo.addedAt,
                 latestRelease = repo.latestRelease,
                 packageName = repo.packageName,
-                installStatus = repo.installStatus
+                installStatus = repo.installStatus,
+                stargazersCount = repo.stargazersCount,
+                forksCount = repo.forksCount,
+                watchersCount = repo.watchersCount
             )
 
             preferences[reposKey] = Json.encodeToString(updatedRepos)
@@ -115,7 +124,10 @@ class RepoDataStore(private val context: Context) {
                         addedAt = repo.addedAt,
                         latestRelease = repo.latestRelease,
                         packageName = repo.packageName,
-                        installStatus = repo.installStatus
+                        installStatus = repo.installStatus,
+                        stargazersCount = repo.stargazersCount,
+                        forksCount = repo.forksCount,
+                        watchersCount = repo.watchersCount
                     )
                 } else existingRepo
             }

@@ -11,28 +11,22 @@ import androidx.compose.material.icons.filled.*
 import androidx.activity.compose.BackHandler
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.graphics.asImageBitmap
 import androidx.core.graphics.drawable.toBitmap
 import coil.compose.AsyncImage
 import com.example.githubappmanager.data.download.DownloadProgress
 import com.example.githubappmanager.domain.model.AppInstallStatus
 import com.example.githubappmanager.domain.model.GitHubRepo
-import androidx.compose.ui.graphics.asImageBitmap
-import androidx.core.graphics.drawable.toBitmap
-import com.example.githubappmanager.domain.model.GitHubRepoInfo
-import com.example.githubappmanager.data.remote.GitHubApiClient
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -97,17 +91,6 @@ private fun RepoDetailContent(
                 null
             }
         } else null
-    }
-
-    // Load dynamic GitHub info
-    val repoInfo = remember { mutableStateOf<GitHubRepoInfo?>(null) }
-    LaunchedEffect(repo.owner, repo.name) {
-        try {
-            val info = GitHubApiClient.apiService.getRepoInfo(repo.owner, repo.name)
-            repoInfo.value = info
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
     }
 
     Column(
@@ -177,7 +160,7 @@ private fun RepoDetailContent(
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = "${repoInfo.value?.stargazersCount ?: 0}",
+                    text = "${repo.stargazersCount}",
                     style = MaterialTheme.typography.bodySmall
                 )
             }
