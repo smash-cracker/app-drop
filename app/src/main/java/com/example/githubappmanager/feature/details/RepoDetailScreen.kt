@@ -10,6 +10,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.activity.compose.BackHandler
 import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -32,7 +33,6 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.core.graphics.drawable.toBitmap
 import com.example.githubappmanager.domain.model.GitHubRepoInfo
 import com.example.githubappmanager.data.remote.GitHubApiClient
-
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -85,7 +85,8 @@ private fun RepoDetailContent(
 ) {
     val release = repo.latestRelease
     val context = LocalContext.current
-    val isInstalled = repo.installStatus == AppInstallStatus.INSTALLED_CURRENT || repo.installStatus == AppInstallStatus.INSTALLED_OUTDATED
+    val isInstalled = repo.installStatus == AppInstallStatus.INSTALLED_CURRENT ||
+            repo.installStatus == AppInstallStatus.INSTALLED_OUTDATED
 
     val painter: Painter? = remember(repo.packageName, isInstalled) {
         if (isInstalled && repo.packageName != null) {
@@ -98,10 +99,9 @@ private fun RepoDetailContent(
         } else null
     }
 
-    // 🆕 Load dynamic GitHub info
-    val repoInfo = remember { androidx.compose.runtime.mutableStateOf<GitHubRepoInfo?>(null) }
-
-    androidx.compose.runtime.LaunchedEffect(repo.owner, repo.name) {
+    // Load dynamic GitHub info
+    val repoInfo = remember { mutableStateOf<GitHubRepoInfo?>(null) }
+    LaunchedEffect(repo.owner, repo.name) {
         try {
             val info = GitHubApiClient.apiService.getRepoInfo(repo.owner, repo.name)
             repoInfo.value = info
@@ -157,77 +157,76 @@ private fun RepoDetailContent(
         }
 
         // 🌟 Info row (Dynamic)
-Row(
-    modifier = Modifier
-        .fillMaxWidth()
-        .padding(top = 8.dp),
-    horizontalArrangement = Arrangement.SpaceEvenly,
-    verticalAlignment = Alignment.CenterVertically
-) {
-         // ⭐ Stars
-Column(
-    horizontalAlignment = Alignment.CenterHorizontally,
-    verticalArrangement = Arrangement.Center
-) {
-    Icon(
-        imageVector = Icons.Filled.Star,
-        contentDescription = "Stars",
-        tint = Color(0xFFFFD700),
-        modifier = Modifier.size(20.dp)
-    )
-    Spacer(modifier = Modifier.height(4.dp))
-    Text(
-        text = "${repoInfo.value?.stargazersCount ?: 0}",
-        style = MaterialTheme.typography.bodySmall
-    )
-}
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 8.dp),
+            horizontalArrangement = Arrangement.SpaceEvenly,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // ⭐ Stars
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.Star,
+                    contentDescription = "Stars",
+                    tint = Color(0xFFFFD700),
+                    modifier = Modifier.size(20.dp)
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = "${repoInfo.value?.stargazersCount ?: 0}",
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
 
-
-    Divider(
+            Divider(
         modifier = Modifier
             .height(24.dp)
             .width(1.dp),
-        color = MaterialTheme.colorScheme.outlineVariant
-    )
+                color = MaterialTheme.colorScheme.outlineVariant
+            )
 
-    // 📦 Size
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Icon(
-            imageVector = Icons.Filled.CloudDownload,
-            contentDescription = "App Size",
-            tint = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.size(18.dp)
-        )
-        Text(
-            text = "50 MB",
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-    }
+            // 📦 Size
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Icon(
+                    imageVector = Icons.Filled.CloudDownload,
+                    contentDescription = "App Size",
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(18.dp)
+                )
+                Text(
+                    text = "50 MB",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
 
     // Vertical divider
-    Divider(
+            Divider(
         modifier = Modifier
             .height(24.dp)
             .width(1.dp),
-        color = MaterialTheme.colorScheme.outlineVariant
-    )
+                color = MaterialTheme.colorScheme.outlineVariant
+            )
 
-    // 🔢 Version
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Icon(
-            imageVector = Icons.Filled.Info,
-            contentDescription = "Version",
-            tint = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.size(18.dp)
-        )
-        Text(
-            text = release?.tagName ?: "v1.0",
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-    }
-}
+            // 🔢 Version
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Icon(
+                    imageVector = Icons.Filled.Info,
+                    contentDescription = "Version",
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(18.dp)
+                )
+                Text(
+                    text = release?.tagName ?: "v1.0",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
 
         // --- Existing release/download UI ---
         when {
@@ -266,6 +265,7 @@ Column(
             }
         }
 
+        // Latest Release Section with "See More"
         release?.let {
             Divider()
             Text(
@@ -287,10 +287,18 @@ Column(
             Spacer(modifier = Modifier.height(8.dp))
 
             if (!it.body.isNullOrBlank()) {
-                Text(
-                    text = it.body,
-                    style = MaterialTheme.typography.bodyMedium
-                )
+                var expanded by remember { mutableStateOf(false) }
+                Column {
+                    Text(
+                        text = it.body,
+                        style = MaterialTheme.typography.bodyMedium,
+                        maxLines = if (expanded) Int.MAX_VALUE else 3,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    TextButton(onClick = { expanded = !expanded }) {
+                        Text(if (expanded) "Show less" else "See more")
+                    }
+                }
             }
         } ?: run {
             Divider()
@@ -303,6 +311,7 @@ Column(
     }
 }
 
+// --- StatusActions and PrimaryActionButton unchanged ---
 @Composable
 private fun StatusActions(
     installStatus: AppInstallStatus,
