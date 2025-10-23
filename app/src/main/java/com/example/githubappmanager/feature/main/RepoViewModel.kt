@@ -16,7 +16,7 @@ import com.example.githubappmanager.domain.model.withInfo
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 class RepoViewModel(application: Application) : AndroidViewModel(application) {
@@ -47,6 +47,9 @@ class RepoViewModel(application: Application) : AndroidViewModel(application) {
                 _recentlyViewed.value = list
             }
         }
+
+        // Refresh install status for all repos on app start
+        refreshAllInstallStatus()
     }
 
     fun addRecentlyViewed(repo: GitHubRepo) {
@@ -58,6 +61,57 @@ class RepoViewModel(application: Application) : AndroidViewModel(application) {
     fun clearRecentlyViewed() {
         viewModelScope.launch {
             repoDataStore.clearRecentlyViewed()
+        }
+    }
+
+    // ----------------------------
+    // Install Status Management
+    // ----------------------------
+    private fun refreshAllInstallStatus() {
+        viewModelScope.launch {
+            val currentRepos = repos.first() // ✅ Get list from Flow
+            currentRepos.forEach { repo ->
+                try {
+                    val updatedRepo = detectAndUpdateInstallStatus(repo)
+                    if (updatedRepo.installStatus != repo.installStatus || updatedRepo.packageName != repo.packageName) {
+                        repoDataStore.updateRepo(updatedRepo)
+                    }
+                } catch (e: Exception) {
+                    Log.e("RepoViewModel", "Error refreshing install status for ${repo.name}", e)
+                }
+            }
+        }
+    }
+
+    private suspend fun detectAndUpdateInstallStatus(repo: GitHubRepo): GitHubRepo {
+        val foundPackageName = appInstallManager.findInstalledPackageForRepo(repo.owner, repo.name)
+        val packageName = foundPackageName
+            ?: repo.packageName
+            ?: appInstallManager.guessPackageName(repo.owner, repo.name)
+
+        val release = try {
+            apiService.getLatestRelease(repo.owner, repo.name)
+        } catch (e: Exception) {
+            repo.latestRelease
+        }
+
+        val installStatus = appInstallManager.checkInstallStatus(release, packageName)
+
+        val repoInfo = try {
+            apiService.getRepoInfo(repo.owner, repo.name)
+        } catch (e: Exception) {
+            null
+        }
+
+        val apkSizeBytes = release?.extractApkSize()
+
+        return repo.copy(
+            latestRelease = release ?: repo.latestRelease,
+            packageName = packageName,
+            installStatus = installStatus,
+            apkSizeBytes = apkSizeBytes ?: repo.apkSizeBytes
+        ).let { current ->
+            repoInfo?.let { current.withInfo(it) } ?: current
         }
     }
 
@@ -82,12 +136,11 @@ class RepoViewModel(application: Application) : AndroidViewModel(application) {
                     null
                 }
 
-                val packageName = appInstallManager.guessPackageName(baseRepo.owner, baseRepo.name)
-                val installStatus = release?.let {
-                    appInstallManager.checkInstallStatus(it, packageName)
-                } ?: AppInstallStatus.UNKNOWN
+                val foundPackageName = appInstallManager.findInstalledPackageForRepo(baseRepo.owner, baseRepo.name)
+                val packageName = foundPackageName ?: appInstallManager.guessPackageName(baseRepo.owner, baseRepo.name)
+                val installStatus = appInstallManager.checkInstallStatus(release, packageName)
 
-                val apkSizeBytes = release.extractApkSize()
+                val apkSizeBytes = release?.extractApkSize()
 
                 val repoWithRelease = baseRepo.copy(
                     latestRelease = release,
@@ -109,8 +162,13 @@ class RepoViewModel(application: Application) : AndroidViewModel(application) {
     fun refreshRepo(repo: GitHubRepo) {
         viewModelScope.launch {
             try {
-                val release = apiService.getLatestRelease(repo.owner, repo.name)
-                val packageName = repo.packageName ?: appInstallManager.guessPackageName(repo.owner, repo.name)
+                val foundPackageName = appInstallManager.findInstalledPackageForRepo(repo.owner, repo.name)
+                val packageName = foundPackageName ?: repo.packageName ?: appInstallManager.guessPackageName(repo.owner, repo.name)
+                val release = try {
+                    apiService.getLatestRelease(repo.owner, repo.name)
+                } catch (e: Exception) {
+                    repo.latestRelease
+                }
                 val installStatus = appInstallManager.checkInstallStatus(release, packageName)
 
                 val repoInfo = try {
@@ -119,13 +177,13 @@ class RepoViewModel(application: Application) : AndroidViewModel(application) {
                     null
                 }
 
-                val apkSizeBytes = release.extractApkSize()
+                val apkSizeBytes = release?.extractApkSize()
 
                 val updatedRepo = repo.copy(
-                    latestRelease = release,
+                    latestRelease = release ?: repo.latestRelease,
                     packageName = packageName,
                     installStatus = installStatus,
-                    apkSizeBytes = apkSizeBytes
+                    apkSizeBytes = apkSizeBytes ?: repo.apkSizeBytes
                 ).let { current ->
                     repoInfo?.let { current.withInfo(it) } ?: current
                 }
@@ -134,6 +192,28 @@ class RepoViewModel(application: Application) : AndroidViewModel(application) {
                 addRecentlyViewed(updatedRepo)
             } catch (e: Exception) {
                 Log.e("RepoViewModel", "refreshRepo failed", e)
+                refreshInstallStatusLocal(repo)
+            }
+        }
+    }
+
+    private fun refreshInstallStatusLocal(repo: GitHubRepo) {
+        viewModelScope.launch {
+            try {
+                val foundPackageName = appInstallManager.findInstalledPackageForRepo(repo.owner, repo.name)
+                val packageName = foundPackageName ?: repo.packageName
+                val installStatus = appInstallManager.checkInstallStatus(repo.latestRelease, packageName)
+
+                val updatedRepo = repo.copy(
+                    packageName = packageName,
+                    installStatus = installStatus
+                )
+
+                if (updatedRepo.installStatus != repo.installStatus || updatedRepo.packageName != repo.packageName) {
+                    repoDataStore.updateRepo(updatedRepo)
+                }
+            } catch (e: Exception) {
+                Log.e("RepoViewModel", "refreshInstallStatusLocal failed", e)
             }
         }
     }
@@ -160,6 +240,7 @@ class RepoViewModel(application: Application) : AndroidViewModel(application) {
                         val downloadedFile = apkDownloader.getDownloadedApk(fileName)
                         downloadedFile?.let { file ->
                             appInstallManager.installApk(file)
+                            refreshInstallStatusLocal(repo)
                         }
                         // Clear progress after installation
                         _downloadProgress.value = _downloadProgress.value - repo.url
@@ -173,6 +254,10 @@ class RepoViewModel(application: Application) : AndroidViewModel(application) {
     fun uninstallApp(packageName: String) {
         Log.d("RepoViewModel", "uninstallApp requested for package=$packageName")
         appInstallManager.uninstallApp(packageName)
+        viewModelScope.launch {
+            kotlinx.coroutines.delay(1000)
+            refreshAllInstallStatus()
+        }
     }
 
     fun clearDownloadProgress(repoUrl: String) {

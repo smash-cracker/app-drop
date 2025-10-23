@@ -2,6 +2,7 @@ package com.example.githubappmanager.data.install
 
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageInfo
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
@@ -16,6 +17,137 @@ class AppInstallManager(private val context: Context) {
     
     private val packageManager = context.packageManager
 
+    // NEW: Get ALL installed packages and find matches for the repo
+    fun findInstalledPackageForRepo(owner: String, repoName: String): String? {
+        Log.d("AppInstallManager", "Searching for installed package for $owner/$repoName")
+        
+        val installedPackages = getInstalledPackages()
+        val possiblePatterns = generatePackagePatterns(owner, repoName)
+        
+        Log.d("AppInstallManager", "Checking ${installedPackages.size} installed packages against ${possiblePatterns.size} patterns")
+        
+        installedPackages.forEach { packageName ->
+            if (matchesAnyPattern(packageName, possiblePatterns)) {
+                Log.d("AppInstallManager", "Found matching package: $packageName for $owner/$repoName")
+                return packageName
+            }
+        }
+        
+        Log.d("AppInstallManager", "No installed package found for $owner/$repoName")
+        return null
+    }
+
+    // NEW: Get list of all installed packages
+    private fun getInstalledPackages(): List<String> {
+        return try {
+            val packages = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                packageManager.getInstalledPackages(PackageManager.PackageInfoFlags.of(0))
+            } else {
+                @Suppress("DEPRECATION")
+                packageManager.getInstalledPackages(0)
+            }
+            packages.map { it.packageName }
+        } catch (e: Exception) {
+            Log.e("AppInstallManager", "Error getting installed packages", e)
+            emptyList()
+        }
+    }
+
+    // NEW: Generate possible package name patterns
+    private fun generatePackagePatterns(owner: String, repoName: String): List<String> {
+        val cleanRepo = repoName.lowercase().replace("-", "").replace("_", "").replace(".", "")
+        val cleanOwner = owner.lowercase().replace("-", "").replace("_", "").replace(".", "")
+        
+        return listOf(
+            "com.$cleanOwner.$cleanRepo",
+            "com.github.$cleanOwner.$cleanRepo", 
+            "io.github.$cleanOwner.$cleanRepo",
+            "org.$cleanOwner.$cleanRepo",
+            "dev.$cleanOwner.$cleanRepo",
+            "net.$cleanOwner.$cleanRepo",
+            "app.$cleanOwner.$cleanRepo",
+            "me.$cleanOwner.$cleanRepo",
+            "eu.$cleanOwner.$cleanRepo",
+            "uk.$cleanOwner.$cleanRepo",
+            "de.$cleanOwner.$cleanRepo",
+            "fr.$cleanOwner.$cleanRepo",
+            "jp.$cleanOwner.$cleanRepo",
+            "kr.$cleanOwner.$cleanRepo",
+            "cn.$cleanOwner.$cleanRepo",
+            "in.$cleanOwner.$cleanRepo",
+            "br.$cleanOwner.$cleanRepo",
+            "ru.$cleanOwner.$cleanRepo",
+            "es.$cleanOwner.$cleanRepo",
+            "it.$cleanOwner.$cleanRepo",
+            "ca.$cleanOwner.$cleanRepo",
+            "au.$cleanOwner.$cleanRepo",
+            "nz.$cleanOwner.$cleanRepo",
+            "mx.$cleanOwner.$cleanRepo",
+            "co.$cleanOwner.$cleanRepo",
+            "ar.$cleanOwner.$cleanRepo",
+            "cl.$cleanOwner.$cleanRepo",
+            "pe.$cleanOwner.$cleanRepo",
+            "za.$cleanOwner.$cleanRepo",
+            "ng.$cleanOwner.$cleanRepo",
+            "eg.$cleanOwner.$cleanRepo",
+            "ke.$cleanOwner.$cleanRepo",
+            "tz.$cleanOwner.$cleanRepo",
+            "et.$cleanOwner.$cleanRepo",
+            "gh.$cleanOwner.$cleanRepo",
+            "ci.$cleanOwner.$cleanRepo",
+            "sn.$cleanOwner.$cleanRepo",
+            "cm.$cleanOwner.$cleanRepo",
+            "ug.$cleanOwner.$cleanRepo",
+            "ao.$cleanOwner.$cleanRepo",
+            "mz.$cleanOwner.$cleanRepo",
+            "zm.$cleanOwner.$cleanRepo",
+            "zw.$cleanOwner.$cleanRepo",
+            "mw.$cleanOwner.$cleanRepo",
+            "bw.$cleanOwner.$cleanRepo",
+            "na.$cleanOwner.$cleanRepo",
+            "sz.$cleanOwner.$cleanRepo",
+            "ls.$cleanOwner.$cleanRepo",
+            "so.$cleanOwner.$cleanRepo",
+            "sd.$cleanOwner.$cleanRepo",
+            "ss.$cleanOwner.$cleanRepo",
+            "er.$cleanOwner.$cleanRepo",
+            "dj.$cleanOwner.$cleanRepo",
+            "km.$cleanOwner.$cleanRepo",
+            "mu.$cleanOwner.$cleanRepo",
+            "sc.$cleanOwner.$cleanRepo",
+            "cv.$cleanOwner.$cleanRepo",
+            "gw.$cleanOwner.$cleanRepo",
+            "gq.$cleanOwner.$cleanRepo",
+            "ga.$cleanOwner.$cleanRepo",
+            "cg.$cleanOwner.$cleanRepo",
+            "cd.$cleanOwner.$cleanRepo",
+            "rw.$cleanOwner.$cleanRepo",
+            "bi.$cleanOwner.$cleanRepo",
+            "mg.$cleanOwner.$cleanRepo",
+            "ml.$cleanOwner.$cleanRepo",
+            "bf.$cleanOwner.$cleanRepo",
+            "ne.$cleanOwner.$cleanRepo",
+            "tg.$cleanOwner.$cleanRepo",
+            "bj.$cleanOwner.$cleanRepo",
+            "mr.$cleanOwner.$cleanRepo",
+            "lr.$cleanOwner.$cleanRepo",
+            "sl.$cleanOwner.$cleanRepo",
+            "gn.$cleanOwner.$cleanRepo",
+            "gm.$cleanOwner.$cleanRepo",
+            "gm.$cleanOwner.$cleanRepo",
+            cleanRepo, // Sometimes package is just the repo name
+            cleanOwner // Sometimes package is just the owner name
+        ).distinct()
+    }
+
+    // NEW: Check if package matches any pattern
+    private fun matchesAnyPattern(packageName: String, patterns: List<String>): Boolean {
+        return patterns.any { pattern ->
+            packageName.equals(pattern, ignoreCase = true) || 
+            packageName.contains(pattern, ignoreCase = true)
+        }
+    }
+
     fun getInstalledAppInfo(packageName: String): AppInfo? {
         return try {
             val packageInfo = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -28,7 +160,7 @@ class AppInstallManager(private val context: Context) {
             val applicationInfo = packageInfo.applicationInfo
             Log.d(
                 "AppInstallManager",
-                "getInstalledAppInfo: found pkg=${packageInfo.packageName}, versionName=${packageInfo.versionName}, isSystem=${(applicationInfo?.flags ?: 0) and android.content.pm.ApplicationInfo.FLAG_SYSTEM != 0}"
+                "getInstalledAppInfo: found pkg=${packageInfo.packageName}, versionName=${packageInfo.versionName}, versionCode=${packageInfo.versionCode}"
             )
             AppInfo(
                 packageName = packageInfo.packageName,
@@ -49,33 +181,78 @@ class AppInstallManager(private val context: Context) {
         }
     }
 
+    // UPDATED: Improved package name guessing
     fun guessPackageName(owner: String, repoName: String): String {
-        val packageName = "com.${owner.lowercase()}.${repoName.lowercase().replace("-", "").replace("_", "")}"
-        Log.d("AppInstallManager", "Guessed package name for $owner/$repoName: $packageName")
-        return packageName
+        val cleanRepo = repoName.lowercase().replace("-", "").replace("_", "").replace(".", "")
+        val cleanOwner = owner.lowercase().replace("-", "").replace("_", "").replace(".", "")
+        
+        // First, try to find if any package is already installed
+        val installedPackage = findInstalledPackageForRepo(owner, repoName)
+        if (installedPackage != null) {
+            return installedPackage
+        }
+        
+        // If no installed package found, guess the most common pattern
+        return "com.$cleanOwner.$cleanRepo"
     }
 
-    fun checkInstallStatus(release: GitHubRelease, packageName: String): AppInstallStatus {
-        val installedApp = getInstalledAppInfo(packageName)
-            ?: return AppInstallStatus.NOT_INSTALLED
+    // UPDATED: Better install status checking
+    fun checkInstallStatus(release: GitHubRelease?, guessedPackageName: String?): AppInstallStatus {
+        // First, try to find any installed package for this repo
+        val installedPackage = if (guessedPackageName != null && getInstalledAppInfo(guessedPackageName) != null) {
+            guessedPackageName
+        } else {
+            null
+        }
+
+        if (installedPackage == null) {
+            Log.d("AppInstallManager", "No installed package found - status: NOT_INSTALLED")
+            return AppInstallStatus.NOT_INSTALLED
+        }
+
+        val installedApp = getInstalledAppInfo(installedPackage) ?: return AppInstallStatus.NOT_INSTALLED
+        
+        // If no release info, assume installed but unknown version
+        if (release == null) {
+            Log.d("AppInstallManager", "No release info - status: INSTALLED_CURRENT")
+            return AppInstallStatus.INSTALLED_CURRENT
+        }
 
         return try {
-            val releaseVersion = release.tagName.removePrefix("v").removePrefix("V")
+            val releaseVersion = release.tagName?.removePrefix("v")?.removePrefix("V") ?: "1.0.0"
             val installedVersion = installedApp.versionName.removePrefix("v").removePrefix("V")
             
+            val comparison = compareVersions(installedVersion, releaseVersion)
+            
             when {
-                compareVersions(installedVersion, releaseVersion) < 0 -> AppInstallStatus.INSTALLED_OUTDATED
-                compareVersions(installedVersion, releaseVersion) >= 0 -> AppInstallStatus.INSTALLED_CURRENT
-                else -> AppInstallStatus.UNKNOWN
+                comparison < 0 -> {
+                    Log.d("AppInstallManager", "Installed version ($installedVersion) < Release version ($releaseVersion) - status: INSTALLED_OUTDATED")
+                    AppInstallStatus.INSTALLED_OUTDATED
+                }
+                comparison >= 0 -> {
+                    Log.d("AppInstallManager", "Installed version ($installedVersion) >= Release version ($releaseVersion) - status: INSTALLED_CURRENT")
+                    AppInstallStatus.INSTALLED_CURRENT
+                }
+                else -> {
+                    Log.d("AppInstallManager", "Version comparison failed - status: UNKNOWN")
+                    AppInstallStatus.UNKNOWN
+                }
             }
         } catch (e: Exception) {
+            Log.e("AppInstallManager", "Error comparing versions", e)
             AppInstallStatus.UNKNOWN
         }
     }
 
+    // IMPROVED: Better version comparison
     private fun compareVersions(installed: String, release: String): Int {
-        val installedParts = installed.split(".").mapNotNull { it.toIntOrNull() }
-        val releaseParts = release.split(".").mapNotNull { it.toIntOrNull() }
+        val installedParts = installed.split(".", "-", "_", "+").mapNotNull { it.toIntOrNull() }
+        val releaseParts = release.split(".", "-", "_", "+").mapNotNull { it.toIntOrNull() }
+        
+        if (installedParts.isEmpty() || releaseParts.isEmpty()) {
+            // Fallback: string comparison if version parsing fails
+            return installed.compareTo(release)
+        }
         
         val maxLength = maxOf(installedParts.size, releaseParts.size)
         
@@ -94,10 +271,9 @@ class AppInstallManager(private val context: Context) {
     fun uninstallApp(packageName: String) {
         Log.d(
             "AppInstallManager",
-            "Attempting to uninstall package: $packageName (sdk=${Build.VERSION.SDK_INT})"
+            "Attempting to uninstall package: $packageName"
         )
         
-        // Check if the app is actually installed
         val isInstalled = getInstalledAppInfo(packageName) != null
         Log.d("AppInstallManager", "Package $packageName installed: $isInstalled")
         
@@ -112,9 +288,8 @@ class AppInstallManager(private val context: Context) {
         }
         
         try {
-            Log.d("AppInstallManager", "Launching uninstall intent: $intent for $packageName")
+            Log.d("AppInstallManager", "Launching uninstall intent for $packageName")
             context.startActivity(intent)
-            Log.d("AppInstallManager", "Uninstall intent launched for $packageName")
         } catch (e: Exception) {
             Log.e("AppInstallManager", "Failed to launch uninstall intent for $packageName", e)
         }
