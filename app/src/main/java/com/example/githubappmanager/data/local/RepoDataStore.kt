@@ -1,4 +1,4 @@
-package com.example.githubappmanager.data
+package com.example.githubappmanager.data.local
 
 import android.content.Context
 import androidx.datastore.core.DataStore
@@ -6,7 +6,13 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
-import kotlinx.coroutines.flow.*
+import com.example.githubappmanager.domain.model.AppInstallStatus
+import com.example.githubappmanager.domain.model.GitHubRelease
+import com.example.githubappmanager.domain.model.GitHubRepo
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.map
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
@@ -22,7 +28,11 @@ data class SerializableGitHubRepo(
     val addedAt: Long,
     val latestRelease: GitHubRelease? = null,
     val packageName: String? = null,
-    val installStatus: AppInstallStatus = AppInstallStatus.UNKNOWN
+    val installStatus: AppInstallStatus = AppInstallStatus.UNKNOWN,
+    val stargazersCount: Int = 0,
+    val forksCount: Int = 0,
+    val watchersCount: Int = 0,
+    val apkSizeBytes: Long? = null
 )
 
 class RepoDataStore(private val context: Context) {
@@ -39,13 +49,17 @@ class RepoDataStore(private val context: Context) {
                 val serializable = Json.decodeFromString<List<SerializableGitHubRepo>>(jsonString)
                 serializable.map {
                     GitHubRepo(
-                        it.url,
-                        it.name,
-                        it.owner,
-                        it.addedAt,
-                        it.latestRelease,
-                        it.packageName,
-                        it.installStatus
+                        url = it.url,
+                        name = it.name,
+                        owner = it.owner,
+                        addedAt = it.addedAt,
+                        latestRelease = it.latestRelease,
+                        packageName = it.packageName,
+                        installStatus = it.installStatus,
+                        stargazersCount = it.stargazersCount,
+                        forksCount = it.forksCount,
+                        watchersCount = it.watchersCount,
+                        apkSizeBytes = it.apkSizeBytes
                     )
                 }
             } catch (e: Exception) {
@@ -70,7 +84,11 @@ class RepoDataStore(private val context: Context) {
                 addedAt = repo.addedAt,
                 latestRelease = repo.latestRelease,
                 packageName = repo.packageName,
-                installStatus = repo.installStatus
+                installStatus = repo.installStatus,
+                stargazersCount = repo.stargazersCount,
+                forksCount = repo.forksCount,
+                watchersCount = repo.watchersCount,
+                apkSizeBytes = repo.apkSizeBytes
             )
 
             preferences[reposKey] = Json.encodeToString(updatedRepos)
@@ -109,7 +127,11 @@ class RepoDataStore(private val context: Context) {
                         addedAt = repo.addedAt,
                         latestRelease = repo.latestRelease,
                         packageName = repo.packageName,
-                        installStatus = repo.installStatus
+                        installStatus = repo.installStatus,
+                        stargazersCount = repo.stargazersCount,
+                        forksCount = repo.forksCount,
+                        watchersCount = repo.watchersCount,
+                        apkSizeBytes = repo.apkSizeBytes
                     )
                 } else existingRepo
             }

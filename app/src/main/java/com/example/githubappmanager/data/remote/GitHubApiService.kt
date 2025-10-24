@@ -1,6 +1,7 @@
-package com.example.githubappmanager.network
+package com.example.githubappmanager.data.remote
 
-import com.example.githubappmanager.data.GitHubRelease
+import com.example.githubappmanager.domain.model.GitHubRelease
+import com.example.githubappmanager.domain.model.GitHubRepoInfo
 import kotlinx.serialization.json.Json
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
@@ -17,6 +18,13 @@ interface GitHubApiService {
         @Path("owner") owner: String,
         @Path("repo") repo: String
     ): GitHubRelease
+
+    // 🆕 Add this endpoint to fetch repo info
+    @GET("repos/{owner}/{repo}")
+    suspend fun getRepoInfo(
+        @Path("owner") owner: String,
+        @Path("repo") repo: String
+    ): GitHubRepoInfo
 }
 
 object GitHubApiClient {
