@@ -106,6 +106,7 @@ fun GithubAppManagerApp() {
                         },
                         onClearProgress = { repo -> viewModel.clearDownloadProgress(repo.url) },
                         onRepoClick = { repo -> selectedRepo = repo },
+                        onRemoveRepo = { url -> viewModel.removeRepo(url) }, // ✅ new swipe-delete hook
                         modifier = Modifier.padding(innerPadding)
                     )
 
