@@ -1,6 +1,7 @@
 package com.example.githubappmanager.feature.common.components
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -9,7 +10,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CloudDownload
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Refresh
+// import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -34,7 +35,7 @@ import com.example.githubappmanager.domain.model.GitHubRepo
 fun RepoCard(
     repo: GitHubRepo,
     downloadProgress: DownloadProgress?,
-    onRefresh: () -> Unit,
+    // onRefresh: () -> Unit,
     onInstall: () -> Unit,
     onUninstall: () -> Unit,
     onClearProgress: () -> Unit,
@@ -117,20 +118,20 @@ fun RepoCard(
                 }
 
                 Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                    IconButton(onClick = onRefresh) {
-                        Icon(
-                            imageVector = Icons.Filled.Refresh,
-                            contentDescription = "Refresh",
-                            tint = MaterialTheme.colorScheme.primary
-                        )
-                    }
+                    // IconButton(onClick = onRefresh) {
+                    //     Icon(
+                    //         imageVector = Icons.Filled.Refresh,
+                    //         contentDescription = "Refresh",
+                    //         tint = MaterialTheme.colorScheme.primary
+                    //     )
+                    // }
 
                     downloadProgress?.let { progress ->
                         when {
                             progress.error != null -> {
                                 IconButton(onClick = onClearProgress) {
                                     Icon(
-                                        imageVector = Icons.Filled.Refresh,
+                                        imageVector = Icons.Filled.CloudDownload,
                                         contentDescription = "Clear error",
                                         tint = MaterialTheme.colorScheme.error
                                     )

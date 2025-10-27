@@ -67,7 +67,7 @@ fun SearchScreen(
                     RepoCard(
                         repo = repo,
                         downloadProgress = downloadProgress[repo.url],
-                        onRefresh = { onRefreshRepo(repo) },
+//                        onRefresh = { onRefreshRepo(repo) },
                         onInstall = { onInstallApp(repo) },
                         onUninstall = { onUninstallApp(repo) },
                         onClearProgress = {},

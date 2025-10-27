@@ -7,9 +7,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
-// import androidx.compose.material3.DismissDirection
-// import androidx.compose.material3.DismissState
-// import androidx.compose.material3.DismissValue
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.SwipeToDismissBox
 import androidx.compose.material3.SwipeToDismissBoxValue
@@ -21,7 +18,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.example.githubappmanager.data.download.DownloadProgress
 import com.example.githubappmanager.domain.model.GitHubRepo
-//import androidx.compose.foundation.layout.matchParentSize
 import com.example.githubappmanager.feature.common.components.RepoCard
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -29,13 +25,13 @@ import com.example.githubappmanager.feature.common.components.RepoCard
 fun HomeScreen(
     repos: List<GitHubRepo>,
     downloadProgress: Map<String, DownloadProgress>,
-    onRefreshRepo: (GitHubRepo) -> Unit,
+    // onRefreshRepo: (GitHubRepo) -> Unit,
     onInstallApp: (GitHubRepo) -> Unit,
     onUninstallApp: (GitHubRepo) -> Unit,
     onClearProgress: (GitHubRepo) -> Unit,
     onRepoClick: (GitHubRepo) -> Unit,
     modifier: Modifier = Modifier,
-    onRemoveRepo: ((String) -> Unit)? = null // ✅ optional callback for swipe-to-delete
+    onRemoveRepo: ((String) -> Unit)? = null // optional swipe-to-delete callback
 ) {
     if (repos.isEmpty()) {
         Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -64,25 +60,25 @@ fun HomeScreen(
                 SwipeToDismissBox(
                     state = dismissState,
                     backgroundContent = {
-                    val color = when (dismissState.targetValue) {
-                    SwipeToDismissBoxValue.EndToStart,
-                    SwipeToDismissBoxValue.StartToEnd -> Color.Red.copy(alpha = 0.7f)
-                    else -> Color.Transparent
-                }
-                 Box(
-                    modifier = Modifier
-                 .fillMaxSize() // replaces matchParentSize for full coverage
-                .background(color),
-                contentAlignment = Alignment.Center
-         ) {
-             Text("Deleting...", color = Color.White)
-             }
-        },
+                        val color = when (dismissState.targetValue) {
+                            SwipeToDismissBoxValue.EndToStart,
+                            SwipeToDismissBoxValue.StartToEnd -> Color.Red.copy(alpha = 0.7f)
+                            else -> Color.Transparent
+                        }
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .background(color),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text("Deleting...", color = Color.White)
+                        }
+                    },
                     content = {
                         RepoCard(
                             repo = repo,
                             downloadProgress = downloadProgress[repo.url],
-                            onRefresh = { onRefreshRepo(repo) },
+                            // ❌ Removed onRefresh
                             onInstall = { onInstallApp(repo) },
                             onUninstall = { onUninstallApp(repo) },
                             onClearProgress = { onClearProgress(repo) },

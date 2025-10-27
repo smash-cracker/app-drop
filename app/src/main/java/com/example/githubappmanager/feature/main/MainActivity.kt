@@ -14,6 +14,9 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+//import androidx.compose.ui.Alignment
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
@@ -52,7 +55,6 @@ class MainActivity : ComponentActivity() {
         installSplashScreen()
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-
         setContent { GithubAppManagerApp() }
     }
 }
@@ -96,7 +98,7 @@ fun GithubAppManagerApp() {
                     MainTab.HOME -> HomeScreen(
                         repos = repos,
                         downloadProgress = downloadProgress,
-                        onRefreshRepo = { repo -> viewModel.refreshRepo(repo) },
+                        // onRefreshRepo = { repo -> viewModel.refreshRepo(repo) },
                         onInstallApp = { repo -> viewModel.downloadAndInstallApk(repo) },
                         onUninstallApp = { repo ->
                             repo.packageName?.let { viewModel.uninstallApp(it) } ?: Log.w(
@@ -106,7 +108,7 @@ fun GithubAppManagerApp() {
                         },
                         onClearProgress = { repo -> viewModel.clearDownloadProgress(repo.url) },
                         onRepoClick = { repo -> selectedRepo = repo },
-                        onRemoveRepo = { url -> viewModel.removeRepo(url) }, // ✅ new swipe-delete hook
+                        onRemoveRepo = { url -> viewModel.removeRepo(url) }, // Swipe delete
                         modifier = Modifier.padding(innerPadding)
                     )
 
