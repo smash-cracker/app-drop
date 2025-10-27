@@ -361,11 +361,11 @@ private fun StatusActions(
             }
 
             AppInstallStatus.INSTALLED_CURRENT -> {
-                Text(
-                    text = "Latest version installed.",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.primary
-                )
+                // Text(
+                //     text = "Latest version installed.",
+                //     style = MaterialTheme.typography.bodyMedium,
+                //     color = MaterialTheme.colorScheme.primary
+                // )
                 PrimaryActionButton(
                     text = "Uninstall",
                     icon = Icons.Filled.Delete,
