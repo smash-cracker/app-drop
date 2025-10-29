@@ -15,7 +15,6 @@ android {
         targetSdk = 36
         versionCode = 1
         versionName = "1.0"
-
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
@@ -28,49 +27,67 @@ android {
             )
         }
     }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
+
     kotlinOptions {
         jvmTarget = "11"
     }
+
     buildFeatures {
         compose = true
     }
 }
 
 dependencies {
+    // Core
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
+    implementation(libs.androidx.core.splashscreen)
+
+    // Compose BOMs
     implementation(platform(libs.androidx.compose.bom))
+    implementation(platform(libs.androidx.compose.bom.v20250801))
+    implementation(platform("androidx.compose:compose-bom:2024.09.00"))
+
+    // Compose UI
     implementation(libs.androidx.ui)
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
+    implementation(libs.androidx.compose.foundation)
+
+    // ✅ Material 3 Core (Stable)
     implementation(libs.androidx.material3)
-    implementation(libs.androidx.core.splashscreen)
-    implementation(platform(libs.androidx.compose.bom.v20250801))
+    implementation("androidx.compose.material3:material3:1.3.1")
+
+    // ✅ Pull-to-refresh is already built into Material3 1.3.1+
+    // No extra dependency needed!
+
+    // Icons
     implementation("androidx.compose.material:material-icons-extended:1.7.5")
-    
-    // DataStore
+
+    // Data + Networking
     implementation("androidx.datastore:datastore-preferences:1.1.1")
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.7")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3")
-    
-    // Networking
     implementation("com.squareup.retrofit2:retrofit:2.11.0")
     implementation("com.squareup.retrofit2:converter-kotlinx-serialization:2.11.0")
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
     implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
-    implementation(libs.androidx.compose.foundation)
+
+    // Coil for images
     implementation("io.coil-kt:coil-compose:2.7.0")
-    
-    // Markdown parsing for README
+
+    // Markdown rendering
     implementation("com.vladsch.flexmark:flexmark:0.64.8")
     implementation("com.vladsch.flexmark:flexmark-util:0.64.8")
     implementation("com.github.jeziellago:compose-markdown:0.5.7")
 
+    // Testing
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

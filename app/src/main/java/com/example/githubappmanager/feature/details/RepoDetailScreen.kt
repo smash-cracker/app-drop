@@ -9,17 +9,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.Button
-import androidx.compose.material3.CenterAlignedTopAppBar
-import androidx.compose.material3.Divider
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.LinearProgressIndicator
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
+import androidx.compose.material3.*
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -38,6 +29,8 @@ import com.example.githubappmanager.data.download.DownloadProgress
 import com.example.githubappmanager.domain.model.AppInstallStatus
 import com.example.githubappmanager.domain.model.GitHubRepo
 import dev.jeziellago.compose.markdowntext.MarkdownText
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -45,7 +38,7 @@ import java.util.Locale
 fun RepoDetailScreen(
     repo: GitHubRepo,
     downloadProgress: DownloadProgress?,
-    onRefresh: () -> Unit,
+    onRefresh: suspend () -> Unit,
     onInstall: () -> Unit,
     onUninstall: () -> Unit,
     onBack: () -> Unit,
@@ -53,31 +46,50 @@ fun RepoDetailScreen(
 ) {
     BackHandler(onBack = onBack)
 
+    var isRefreshing by remember { mutableStateOf(false) }
+    val coroutineScope = rememberCoroutineScope()
+
     Scaffold(
-        modifier = modifier,
+        modifier = modifier.fillMaxSize(),
         topBar = {
             CenterAlignedTopAppBar(
-                title = { Text(repo.displayName, maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                title = {
+                    Text(
+                        text = repo.displayName,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.Filled.ArrowBack, contentDescription = "Back")
-                    }
-                },
-                actions = {
-                    IconButton(onClick = onRefresh) {
-                        Icon(Icons.Filled.Refresh, contentDescription = "Refresh")
                     }
                 }
             )
         }
     ) { innerPadding ->
-        RepoDetailContent(
-            repo = repo,
-            downloadProgress = downloadProgress,
-            onInstall = onInstall,
-            onUninstall = onUninstall,
-            contentPadding = innerPadding
-        )
+
+        // ✅ Modern PullToRefreshBox API (Compose 1.7+)
+        PullToRefreshBox(
+            isRefreshing = isRefreshing,
+            onRefresh = {
+                coroutineScope.launch {
+                    isRefreshing = true
+                    onRefresh()
+                    delay(1000) // brief spinner animation
+                    isRefreshing = false
+                }
+            },
+            modifier = Modifier.fillMaxSize()
+        ) {
+            RepoDetailContent(
+                repo = repo,
+                downloadProgress = downloadProgress,
+                onInstall = onInstall,
+                onUninstall = onUninstall,
+                contentPadding = innerPadding
+            )
+        }
     }
 }
 
@@ -105,7 +117,9 @@ private fun RepoDetailContent(
         } else null
     }
 
-    val formattedApkSize = remember(repo.apkSizeBytes, release?.assets) { formatApkSize(repo) }
+    val formattedApkSize = remember(repo.apkSizeBytes, release?.assets) {
+        formatApkSize(repo)
+    }
 
     Column(
         modifier = Modifier
@@ -115,7 +129,7 @@ private fun RepoDetailContent(
             .verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        // App icon + name + owner
+        // --- App icon + name + owner ---
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
@@ -139,6 +153,7 @@ private fun RepoDetailContent(
                     contentScale = ContentScale.Crop
                 )
             }
+
             Spacer(modifier = Modifier.width(16.dp))
             Column {
                 Text(
@@ -153,7 +168,7 @@ private fun RepoDetailContent(
             }
         }
 
-        // 🌟 Info row (Dynamic)
+        // --- Info Row: Stars, Size, Version ---
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -161,71 +176,14 @@ private fun RepoDetailContent(
             horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // ⭐ Stars
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
-            ) {
-                Icon(
-                    imageVector = Icons.Filled.Star,
-                    contentDescription = "Stars",
-                    tint = Color(0xFFFFD700),
-                    modifier = Modifier.size(20.dp)
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = "${repo.stargazersCount}",
-                    style = MaterialTheme.typography.bodySmall
-                )
-            }
-
-            Divider(
-                modifier = Modifier
-                    .height(24.dp)
-                    .width(1.dp),
-                color = MaterialTheme.colorScheme.outlineVariant
-            )
-
-            // 📦 Size
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Icon(
-                    imageVector = Icons.Filled.CloudDownload,
-                    contentDescription = "App Size",
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(18.dp)
-                )
-                Text(
-                    text = formattedApkSize,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-
-            // Vertical divider
-            Divider(
-                modifier = Modifier
-                    .height(24.dp)
-                    .width(1.dp),
-                color = MaterialTheme.colorScheme.outlineVariant
-            )
-
-            // 🔢 Version
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Icon(
-                    imageVector = Icons.Filled.Info,
-                    contentDescription = "Version",
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(18.dp)
-                )
-                Text(
-                    text = release?.tagName ?: "v1.0",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
+            InfoItem(Icons.Filled.Star, "${repo.stargazersCount}", "Stars", Color(0xFFFFD700))
+            VerticalDivider()
+            InfoItem(Icons.Filled.CloudDownload, formattedApkSize, "App Size", MaterialTheme.colorScheme.primary)
+            VerticalDivider()
+            InfoItem(Icons.Filled.Info, release?.tagName ?: "v1.0", "Version", MaterialTheme.colorScheme.primary)
         }
 
-        // --- Existing release/download UI ---
+        // --- Download / Install section ---
         when {
             downloadProgress?.error != null -> {
                 Text(
@@ -239,9 +197,11 @@ private fun RepoDetailContent(
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text("Downloading latest APK…")
                     LinearProgressIndicator(
-                        progress = if (downloadProgress.totalBytes > 0) {
-                            downloadProgress.bytesDownloaded.toFloat() / downloadProgress.totalBytes.toFloat()
-                        } else 0f,
+                        progress = {
+                            if (downloadProgress.totalBytes > 0) {
+                                downloadProgress.bytesDownloaded.toFloat() / downloadProgress.totalBytes.toFloat()
+                            } else 0f
+                        },
                         modifier = Modifier.fillMaxWidth()
                     )
                     Text(
@@ -262,56 +222,73 @@ private fun RepoDetailContent(
             }
         }
 
-        // Latest Release Section with "See More"
+        // --- Latest Release section ---
         release?.let {
-            Divider()
-            Text(
-                text = "Latest Release",
-                style = MaterialTheme.typography.titleMedium
-            )
+            HorizontalDivider()
+            Text(text = "Latest Release", style = MaterialTheme.typography.titleMedium)
             it.name?.let { name ->
-                Text(
-                    text = name,
-                    style = MaterialTheme.typography.bodyMedium
-                )
+                Text(text = name, style = MaterialTheme.typography.bodyMedium)
             }
             Text(
                 text = "Published at ${it.publishedAt}",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
-
             Spacer(modifier = Modifier.height(8.dp))
 
             if (!it.body.isNullOrBlank()) {
-    var expanded by remember { mutableStateOf(false) }
-    Column {
+                var expanded by remember { mutableStateOf(false) }
+                Column {
                     MarkdownText(
-                        modifier = Modifier.fillMaxWidth(),
                         markdown = it.body,
-            style = MaterialTheme.typography.bodyMedium,
-                        maxLines = if (expanded) Int.MAX_VALUE else 3
-        )
-        TextButton(onClick = { expanded = !expanded }) {
-            Text(
-                text = if (expanded) "Show less" else "See more",
-                color = Color(0xFF005F73) // <-- Added color here
-            )
-        }
-    }
-}
+                        style = MaterialTheme.typography.bodyMedium.copy(
+                            color = MaterialTheme.colorScheme.onSurface
+                        ),
+                        maxLines = if (expanded) Int.MAX_VALUE else 3,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    TextButton(onClick = { expanded = !expanded }) {
+                        Text(text = if (expanded) "Show less" else "See more", color = Color(0xFF005F73))
+                    }
+                }
+            }
         } ?: run {
-            Divider()
+            HorizontalDivider()
             Text(
                 text = "No release information available yet.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
+
+        Spacer(modifier = Modifier.height(32.dp))
     }
 }
 
-// --- StatusActions and PrimaryActionButton unchanged ---
+@Composable
+private fun InfoItem(
+    icon: ImageVector,
+    label: String,
+    contentDescription: String,
+    tint: Color
+) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Icon(icon, contentDescription = contentDescription, tint = tint, modifier = Modifier.size(20.dp))
+        Spacer(modifier = Modifier.height(4.dp))
+        Text(label, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    }
+}
+
+@Composable
+private fun VerticalDivider() {
+    Divider(
+        modifier = Modifier
+            .height(24.dp)
+            .width(1.dp),
+        color = MaterialTheme.colorScheme.outlineVariant
+    )
+}
+
 @Composable
 private fun StatusActions(
     installStatus: AppInstallStatus,
@@ -322,28 +299,18 @@ private fun StatusActions(
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         when (installStatus) {
             AppInstallStatus.NOT_INSTALLED -> {
-                PrimaryActionButton(
-                    text = "Install",
-                    icon = Icons.Filled.CloudDownload,
-                    onClick = onInstall,
-                    enabled = hasApk
-                )
+                PrimaryActionButton("Install", Icons.Filled.CloudDownload, onInstall, enabled = hasApk)
                 if (!hasApk) {
-                    Text(
-                        text = "No APK assets found in the latest release.",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                    // Text(
+                    //     text = "No APK assets found in the latest release.",
+                    //     style = MaterialTheme.typography.bodySmall,
+                    //     color = MaterialTheme.colorScheme.onSurfaceVariant
+                    // )
                 }
             }
 
             AppInstallStatus.INSTALLED_OUTDATED -> {
-                PrimaryActionButton(
-                    text = "Update",
-                    icon = Icons.Filled.CloudDownload,
-                    onClick = onInstall,
-                    enabled = hasApk
-                )
+                PrimaryActionButton("Update", Icons.Filled.CloudDownload, onInstall, enabled = hasApk)
                 if (!hasApk) {
                     Text(
                         text = "No APK assets found in the latest release.",
@@ -361,25 +328,12 @@ private fun StatusActions(
             }
 
             AppInstallStatus.INSTALLED_CURRENT -> {
-                // Text(
-                //     text = "Latest version installed.",
-                //     style = MaterialTheme.typography.bodyMedium,
-                //     color = MaterialTheme.colorScheme.primary
-                // )
-                PrimaryActionButton(
-                    text = "Uninstall",
-                    icon = Icons.Filled.Delete,
-                    onClick = onUninstall
-                )
+                PrimaryActionButton("Uninstall", Icons.Filled.Delete, onUninstall)
             }
 
             AppInstallStatus.UNKNOWN -> {
                 if (hasApk) {
-                    PrimaryActionButton(
-                        text = "Install",
-                        icon = Icons.Filled.CloudDownload,
-                        onClick = onInstall
-                    )
+                    PrimaryActionButton("Install", Icons.Filled.CloudDownload, onInstall)
                 } else {
                     Text(
                         text = "No installable artifacts detected.",
@@ -392,16 +346,6 @@ private fun StatusActions(
     }
 }
 
-private fun formatApkSize(repo: GitHubRepo): String {
-    val sizeBytes = repo.apkSizeBytes
-        ?: repo.latestRelease?.preferredApk?.size
-        ?: repo.latestRelease?.androidAssets?.firstOrNull()?.size
-        ?: return "—"
-
-    val megaBytes = sizeBytes.toDouble() / (1024 * 1024)
-    return String.format(Locale.US, "%.1f MB", megaBytes)
-}
-
 @Composable
 private fun PrimaryActionButton(
     text: String,
@@ -409,15 +353,20 @@ private fun PrimaryActionButton(
     onClick: () -> Unit,
     enabled: Boolean = true
 ) {
-    Button(
-        onClick = onClick,
-        modifier = Modifier.fillMaxWidth(),
-        enabled = enabled
-    ) {
+    Button(onClick = onClick, modifier = Modifier.fillMaxWidth(), enabled = enabled) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Icon(icon, contentDescription = null)
             Spacer(modifier = Modifier.width(8.dp))
             Text(text)
         }
     }
+}
+
+private fun formatApkSize(repo: GitHubRepo): String {
+    val sizeBytes = repo.apkSizeBytes
+        ?: repo.latestRelease?.preferredApk?.size
+        ?: repo.latestRelease?.androidAssets?.firstOrNull()?.size
+        ?: return "—"
+    val megaBytes = sizeBytes.toDouble() / (1024 * 1024)
+    return String.format(Locale.US, "%.1f MB", megaBytes)
 }
