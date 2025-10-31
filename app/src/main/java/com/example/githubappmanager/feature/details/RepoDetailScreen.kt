@@ -3,12 +3,17 @@ package com.example.githubappmanager.feature.details
 import android.graphics.drawable.Drawable
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.CloudDownload
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.*
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.*
@@ -46,11 +51,13 @@ fun RepoDetailScreen(
 ) {
     BackHandler(onBack = onBack)
 
-    var isRefreshing by remember { mutableStateOf(false) }
     val coroutineScope = rememberCoroutineScope()
+    var isRefreshing by remember { mutableStateOf(false) }
+    val snackbarHostState = remember { SnackbarHostState() }
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             CenterAlignedTopAppBar(
                 title = {
@@ -62,7 +69,10 @@ fun RepoDetailScreen(
                 },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Back"
+                        )
                     }
                 }
             )
@@ -75,9 +85,25 @@ fun RepoDetailScreen(
             onRefresh = {
                 coroutineScope.launch {
                     isRefreshing = true
-                    onRefresh()
-                    delay(1000) // brief spinner animation
-                    isRefreshing = false
+                    snackbarHostState.showSnackbar("Refreshing repo details...")
+
+                    val refreshStart = System.currentTimeMillis()
+                    try {
+                        // Perform refresh logic
+                        onRefresh()
+                        // Always show success message
+                        snackbarHostState.showSnackbar("✅ Refreshed successfully")
+                    } catch (e: Exception) {
+                        snackbarHostState.showSnackbar("Refresh failed: ${e.message ?: "Unknown error"}")
+                    } finally {
+                        // Ensure spinner stays visible for at least 2 seconds
+                        val elapsed = System.currentTimeMillis() - refreshStart
+                        val minVisibleTime = 2000L
+                        if (elapsed < minVisibleTime) {
+                            delay(minVisibleTime - elapsed)
+                        }
+                        isRefreshing = false
+                    }
                 }
             },
             modifier = Modifier.fillMaxSize()
@@ -111,7 +137,7 @@ private fun RepoDetailContent(
             try {
                 val drawable: Drawable = context.packageManager.getApplicationIcon(repo.packageName)
                 androidx.compose.ui.graphics.painter.BitmapPainter(drawable.toBitmap().asImageBitmap())
-            } catch (e: Exception) {
+            } catch (_: Exception) {
                 null
             }
         } else null
@@ -281,11 +307,11 @@ private fun InfoItem(
 
 @Composable
 private fun VerticalDivider() {
-    Divider(
+    Box(
         modifier = Modifier
             .height(24.dp)
-            .width(1.dp),
-        color = MaterialTheme.colorScheme.outlineVariant
+            .width(1.dp)
+            .background(MaterialTheme.colorScheme.outlineVariant)
     )
 }
 
@@ -300,24 +326,10 @@ private fun StatusActions(
         when (installStatus) {
             AppInstallStatus.NOT_INSTALLED -> {
                 PrimaryActionButton("Install", Icons.Filled.CloudDownload, onInstall, enabled = hasApk)
-                if (!hasApk) {
-                    // Text(
-                    //     text = "No APK assets found in the latest release.",
-                    //     style = MaterialTheme.typography.bodySmall,
-                    //     color = MaterialTheme.colorScheme.onSurfaceVariant
-                    // )
-                }
             }
 
             AppInstallStatus.INSTALLED_OUTDATED -> {
                 PrimaryActionButton("Update", Icons.Filled.CloudDownload, onInstall, enabled = hasApk)
-                if (!hasApk) {
-                    Text(
-                        text = "No APK assets found in the latest release.",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
                 TextButton(onClick = onUninstall) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(Icons.Filled.Delete, contentDescription = null)
