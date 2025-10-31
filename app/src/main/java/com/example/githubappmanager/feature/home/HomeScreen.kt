@@ -17,6 +17,7 @@ import androidx.compose.ui.unit.dp
 import com.example.githubappmanager.data.download.DownloadProgress
 import com.example.githubappmanager.domain.model.GitHubRepo
 import com.example.githubappmanager.feature.common.components.RepoCard
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -28,10 +29,13 @@ fun HomeScreen(
     onClearProgress: (GitHubRepo) -> Unit,
     onRepoClick: (GitHubRepo) -> Unit,
     modifier: Modifier = Modifier,
-    onRemoveRepo: ((String) -> Unit)? = null
+    onRemoveRepo: ((String) -> Unit)? = null,
+    onRestoreRepos: ((List<GitHubRepo>) -> Unit)? = null,
+    snackbarHostState: SnackbarHostState? = null
 ) {
     var selectionMode by remember { mutableStateOf(false) }
     var selectedRepos by remember { mutableStateOf(setOf<String>()) }
+    val coroutineScope = rememberCoroutineScope()
 
     // Exit selection mode automatically if no repos selected
     LaunchedEffect(selectedRepos) {
@@ -65,15 +69,10 @@ fun HomeScreen(
 
                         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                             val isAllSelected = selectedRepos.size == repos.size
-                            val isPartialSelection = selectedRepos.isNotEmpty() && !isAllSelected
+                            val clearButtonLabel =
+                                if (isAllSelected) "Clear All" else "Clear"
 
-                            val clearButtonLabel = when {
-                                isAllSelected -> "Clear All"
-                                isPartialSelection -> "Clear"
-                                else -> "Clear"
-                            }
-
-                            // --- Select All button (always visible) ---
+                            // --- Select All button ---
                             TextButton(onClick = {
                                 selectedRepos = repos.map { it.url }.toSet()
                                 selectionMode = true
@@ -81,15 +80,29 @@ fun HomeScreen(
                                 Text("Select All")
                             }
 
-                            // --- Clear / Clear All button (also deletes selected repos) ---
+                            // --- Clear / Clear All button ---
                             TextButton(onClick = {
-                                // Delete all selected repos
-                                selectedRepos.forEach { url ->
-                                    onRemoveRepo?.invoke(url)
+                                val removed = repos.filter { selectedRepos.contains(it.url) }
+                                removed.forEach { repo ->
+                                    onRemoveRepo?.invoke(repo.url)
                                 }
-                                // Clear selection mode
+
                                 selectedRepos = emptySet()
                                 selectionMode = false
+
+                                // Show snackbar with Undo
+                                if (removed.isNotEmpty() && snackbarHostState != null && onRestoreRepos != null) {
+                                    coroutineScope.launch {
+                                        val result = snackbarHostState.showSnackbar(
+                                            message = "${removed.size} repos deleted",
+                                            actionLabel = "Undo",
+                                            duration = SnackbarDuration.Short
+                                        )
+                                        if (result == SnackbarResult.ActionPerformed) {
+                                            onRestoreRepos(removed)
+                                        }
+                                    }
+                                }
                             }) {
                                 Text(clearButtonLabel)
                             }
@@ -118,7 +131,22 @@ fun HomeScreen(
                             if (value == SwipeToDismissBoxValue.EndToStart ||
                                 value == SwipeToDismissBoxValue.StartToEnd
                             ) {
-                                onRemoveRepo?.invoke(repo.url)
+                                val removedRepo = repo
+                                onRemoveRepo?.invoke(removedRepo.url)
+
+                                // Undo for swipe delete
+                                if (snackbarHostState != null && onRestoreRepos != null) {
+                                    coroutineScope.launch {
+                                        val result = snackbarHostState.showSnackbar(
+                                            message = "Repo deleted",
+                                            actionLabel = "Undo",
+                                            duration = SnackbarDuration.Short
+                                        )
+                                        if (result == SnackbarResult.ActionPerformed) {
+                                            onRestoreRepos(listOf(removedRepo))
+                                        }
+                                    }
+                                }
                                 true
                             } else false
                         }

@@ -5,6 +5,9 @@ import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Bookmark
@@ -36,13 +39,15 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.Alignment
+import androidx.compose.ui.unit.dp
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.compose.ui.unit.dp
 import com.example.githubappmanager.domain.model.GitHubRepo
+import com.example.githubappmanager.feature.details.RepoDetailScreen
+import com.example.githubappmanager.feature.explore.ExploreScreen
 import com.example.githubappmanager.feature.home.HomeScreen
 import com.example.githubappmanager.feature.main.components.AddRepoDialog
 import com.example.githubappmanager.feature.search.SearchScreen
@@ -109,6 +114,10 @@ fun GithubAppManagerApp() {
                         onClearProgress = { repo -> viewModel.clearDownloadProgress(repo.url) },
                         onRepoClick = { repo -> selectedRepo = repo },
                         onRemoveRepo = { url -> viewModel.removeRepo(url) }, // Swipe delete
+                        onRestoreRepos = { removedRepos ->
+                            removedRepos.forEach { viewModel.addRepo(it.url) }
+                        }, // 👈 Undo restore handler
+                        snackbarHostState = snackbarHostState, // 👈 pass host for Snackbar
                         modifier = Modifier.padding(innerPadding)
                     )
 
