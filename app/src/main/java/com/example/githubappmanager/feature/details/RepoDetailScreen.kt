@@ -34,7 +34,6 @@ import com.example.githubappmanager.data.download.DownloadProgress
 import com.example.githubappmanager.domain.model.AppInstallStatus
 import com.example.githubappmanager.domain.model.GitHubRepo
 import dev.jeziellago.compose.markdowntext.MarkdownText
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.util.Locale
 
@@ -87,7 +86,6 @@ fun RepoDetailScreen(
                     isRefreshing = true
                     snackbarHostState.showSnackbar("Refreshing repo details...")
 
-                    val refreshStart = System.currentTimeMillis()
                     try {
                         // Perform refresh logic
                         onRefresh()
@@ -96,12 +94,6 @@ fun RepoDetailScreen(
                     } catch (e: Exception) {
                         snackbarHostState.showSnackbar("Refresh failed: ${e.message ?: "Unknown error"}")
                     } finally {
-                        // Ensure spinner stays visible for at least 2 seconds
-                        val elapsed = System.currentTimeMillis() - refreshStart
-                        val minVisibleTime = 2000L
-                        if (elapsed < minVisibleTime) {
-                            delay(minVisibleTime - elapsed)
-                        }
                         isRefreshing = false
                     }
                 }
