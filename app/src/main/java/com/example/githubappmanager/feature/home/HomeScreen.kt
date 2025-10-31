@@ -1,8 +1,6 @@
 package com.example.githubappmanager.feature.home
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -11,7 +9,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.SwipeToDismissBox
 import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.rememberSwipeToDismissBoxState
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -31,8 +29,63 @@ fun HomeScreen(
     onClearProgress: (GitHubRepo) -> Unit,
     onRepoClick: (GitHubRepo) -> Unit,
     modifier: Modifier = Modifier,
-    onRemoveRepo: ((String) -> Unit)? = null // optional swipe-to-delete callback
+    onRemoveRepo: ((String) -> Unit)? = null
 ) {
+    var selectionMode by remember { mutableStateOf(false) }
+    var selectedRepos by remember { mutableStateOf(setOf<String>()) }
+
+    // Exit selection mode automatically if no repos selected
+    LaunchedEffect(selectedRepos) {
+        if (selectedRepos.isEmpty()) {
+            selectionMode = false
+        }
+    }
+
+    // ---------- Top Bar for selection ----------
+    if (selectionMode) {
+        Surface(
+            color = MaterialTheme.colorScheme.surfaceVariant,
+            tonalElevation = 4.dp
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "${selectedRepos.size} selected",
+                    style = MaterialTheme.typography.titleMedium
+                )
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    TextButton(onClick = {
+                        if (selectedRepos.size == repos.size) {
+                            selectedRepos = emptySet()
+                        } else {
+                            selectedRepos = repos.map { it.url }.toSet()
+                        }
+                    }) {
+                        Text(
+                            if (selectedRepos.size == repos.size && repos.isNotEmpty())
+                                "Clear All"
+                            else
+                                "Select All"
+                        )
+                    }
+
+                    TextButton(onClick = {
+                        selectedRepos = emptySet()
+                        selectionMode = false
+                    }) {
+                        Text("Exit")
+                    }
+                }
+            }
+        }
+    }
+
+    // ---------- Main content ----------
     if (repos.isEmpty()) {
         Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             Text("No repositories yet")
@@ -82,7 +135,24 @@ fun HomeScreen(
                             onInstall = { onInstallApp(repo) },
                             onUninstall = { onUninstallApp(repo) },
                             onClearProgress = { onClearProgress(repo) },
-                            onClick = { onRepoClick(repo) }
+                            onClick = {
+                                if (selectionMode) {
+                                    selectedRepos = if (selectedRepos.contains(repo.url))
+                                        selectedRepos - repo.url
+                                    else
+                                        selectedRepos + repo.url
+                                } else {
+                                    onRepoClick(repo)
+                                }
+                            },
+                            onLongClick = {
+                                if (!selectionMode) {
+                                    selectionMode = true
+                                    selectedRepos = setOf(repo.url)
+                                }
+                            },
+                            isSelectable = selectionMode,
+                            isSelected = selectedRepos.contains(repo.url)
                         )
                     }
                 )
