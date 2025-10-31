@@ -6,6 +6,7 @@ import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.filled.CloudDownload
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Settings
@@ -16,6 +17,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -26,8 +29,7 @@ import com.example.githubappmanager.data.download.DownloadProgress
 import com.example.githubappmanager.domain.model.AppInstallStatus
 import com.example.githubappmanager.domain.model.GitHubRepo
 import androidx.core.graphics.drawable.toBitmap
-import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.graphics.painter.BitmapPainter
+import androidx.compose.ui.graphics.vector.rememberVectorPainter
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -46,8 +48,8 @@ fun RepoCard(
 ) {
     val context = LocalContext.current
 
-    // Try to get installed app icon if available
-    val painter: Painter? = remember(repo.packageName) {
+    // --- Try to get installed app icon if available ---
+    val appIconPainter: Painter? = remember(repo.packageName) {
         if (repo.installStatus == AppInstallStatus.INSTALLED_CURRENT ||
             repo.installStatus == AppInstallStatus.INSTALLED_OUTDATED
         ) {
@@ -86,32 +88,55 @@ fun RepoCard(
                 )
             }
 
-            // --- App Icon or GitHub Avatar ---
-            if (painter != null) {
-                Image(
-                    painter = painter,
-                    contentDescription = "App Icon",
-                    modifier = Modifier
-                        .size(56.dp)
-                        .clip(CircleShape)
-                        .background(Color(0xFFEFEFEF)),
-                    contentScale = ContentScale.Crop
-                )
-            } else {
-                AsyncImage(
-                    model = "https://avatars.githubusercontent.com/${repo.owner}",
-                    contentDescription = "Owner Avatar",
-                    modifier = Modifier
-                        .size(56.dp)
-                        .clip(CircleShape)
-                        .background(Color(0xFFEFEFEF)),
-                    contentScale = ContentScale.Crop
-                )
+            // --- App Icon, Avatar, or Placeholder ---
+            when {
+                appIconPainter != null -> {
+                    Image(
+                        painter = appIconPainter,
+                        contentDescription = "App Icon",
+                        modifier = Modifier
+                            .size(56.dp)
+                            .clip(CircleShape)
+                            .background(Color(0xFFEFEFEF)),
+                        contentScale = ContentScale.Crop
+                    )
+                }
+
+                !repo.owner.isNullOrBlank() -> {
+                    AsyncImage(
+                        model = "https://avatars.githubusercontent.com/${repo.owner}",
+                        contentDescription = "Owner Avatar",
+                        modifier = Modifier
+                            .size(56.dp)
+                            .clip(CircleShape)
+                            .background(Color(0xFFEFEFEF)),
+                        contentScale = ContentScale.Crop,
+                        error = painterResourcePlaceholder()
+                    )
+                }
+
+                else -> {
+                    // --- Default placeholder icon ---
+                    Box(
+                        modifier = Modifier
+                            .size(56.dp)
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.surfaceVariant),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Android,
+                            contentDescription = "Placeholder",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(28.dp)
+                        )
+                    }
+                }
             }
 
             Spacer(modifier = Modifier.width(12.dp))
 
-            // --- Repo info and progress ---
+            // --- Repo Info & Progress ---
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = repo.displayName,
@@ -172,7 +197,7 @@ fun RepoCard(
 
             Spacer(modifier = Modifier.width(8.dp))
 
-            // --- Action icons ---
+            // --- Action icons (Install/Uninstall/etc.) ---
             Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                     // IconButton(onClick = onRefresh) {
                     //     Icon(
@@ -249,4 +274,12 @@ fun RepoCard(
             }
         }
     }
+}
+
+/**
+ * Provides a simple painter for placeholder/error cases.
+ */
+@Composable
+private fun painterResourcePlaceholder(): Painter {
+    return rememberVectorPainter(Icons.Default.Android)
 }
