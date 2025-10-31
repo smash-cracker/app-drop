@@ -1,20 +1,33 @@
 package com.example.githubappmanager.feature.common.components
 
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CloudDownload
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import coil.compose.AsyncImage
 import com.example.githubappmanager.data.download.DownloadProgress
 import com.example.githubappmanager.domain.model.AppInstallStatus
 import com.example.githubappmanager.domain.model.GitHubRepo
+import androidx.core.graphics.drawable.toBitmap
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.painter.BitmapPainter
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -31,6 +44,22 @@ fun RepoCard(
     isSelectable: Boolean = false,
     isSelected: Boolean = false
 ) {
+    val context = LocalContext.current
+
+    // Try to get installed app icon if available
+    val painter: Painter? = remember(repo.packageName) {
+        if (repo.installStatus == AppInstallStatus.INSTALLED_CURRENT ||
+            repo.installStatus == AppInstallStatus.INSTALLED_OUTDATED
+        ) {
+            try {
+                val drawable = context.packageManager.getApplicationIcon(repo.packageName!!)
+                BitmapPainter(drawable.toBitmap().asImageBitmap())
+            } catch (e: Exception) {
+                null
+            }
+        } else null
+    }
+
     val cardModifier = modifier
         .fillMaxWidth()
         .combinedClickable(
@@ -45,20 +74,44 @@ fun RepoCard(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
-            verticalAlignment = Alignment.Top
+                .padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            // Checkbox only when in selection mode
+            // --- Checkbox (only in selection mode) ---
             if (isSelectable) {
                 Checkbox(
                     checked = isSelected,
                     onCheckedChange = { onClick?.invoke() },
-                    modifier = Modifier
-                        .padding(end = 8.dp)
-                        .align(Alignment.CenterVertically)
+                    modifier = Modifier.padding(end = 8.dp)
                 )
             }
 
+            // --- App Icon or GitHub Avatar ---
+            if (painter != null) {
+                Image(
+                    painter = painter,
+                    contentDescription = "App Icon",
+                    modifier = Modifier
+                        .size(56.dp)
+                        .clip(CircleShape)
+                        .background(Color(0xFFEFEFEF)),
+                    contentScale = ContentScale.Crop
+                )
+            } else {
+                AsyncImage(
+                    model = "https://avatars.githubusercontent.com/${repo.owner}",
+                    contentDescription = "Owner Avatar",
+                    modifier = Modifier
+                        .size(56.dp)
+                        .clip(CircleShape)
+                        .background(Color(0xFFEFEFEF)),
+                    contentScale = ContentScale.Crop
+                )
+            }
+
+            Spacer(modifier = Modifier.width(12.dp))
+
+            // --- Repo info and progress ---
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = repo.displayName,
@@ -119,6 +172,7 @@ fun RepoCard(
 
             Spacer(modifier = Modifier.width(8.dp))
 
+            // --- Action icons ---
             Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                     // IconButton(onClick = onRefresh) {
                     //     Icon(
