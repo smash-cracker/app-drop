@@ -81,8 +81,13 @@ fun HomeScreen(
                                 Text("Select All")
                             }
 
-                            // --- Clear / Clear All button ---
+                            // --- Clear / Clear All button (also deletes selected repos) ---
                             TextButton(onClick = {
+                                // Delete all selected repos
+                                selectedRepos.forEach { url ->
+                                    onRemoveRepo?.invoke(url)
+                                }
+                                // Clear selection mode
                                 selectedRepos = emptySet()
                                 selectionMode = false
                             }) {
