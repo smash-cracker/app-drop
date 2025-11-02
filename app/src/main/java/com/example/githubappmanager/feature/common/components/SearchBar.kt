@@ -15,16 +15,16 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.unit.dp
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.unit.dp
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -34,7 +34,8 @@ fun SearchBar(
     onSubmitUrl: (String) -> Unit,
     onClearRecentlyViewed: () -> Unit,
     modifier: Modifier = Modifier,
-    onError: ((String) -> Unit)? = null
+    onError: ((String) -> Unit)? = null,
+    hasRecentlyViewed: Boolean = false // ✅ added parameter
 ) {
     var inputText by rememberSaveable { mutableStateOf(query) }
     val error = remember(inputText) { validateGithubUrl(inputText) }
@@ -53,9 +54,7 @@ fun SearchBar(
             singleLine = true,
             isError = !isValid && inputText.isNotBlank(),
             supportingText = { if (!isValid && inputText.isNotBlank()) Text(error!!) },
-            keyboardOptions = KeyboardOptions(
-                imeAction = ImeAction.Done
-            ),
+            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
             keyboardActions = KeyboardActions(
                 onDone = {
                     if (inputText.isBlank()) return@KeyboardActions
@@ -75,21 +74,23 @@ fun SearchBar(
         Spacer(modifier = Modifier.height(12.dp))
 
         // --- Recently Viewed + Clear All Row ---
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = "Recently Viewed",
-                style = MaterialTheme.typography.bodyMedium
-            )
-
-            TextButton(
-                onClick = onClearRecentlyViewed,
-                contentPadding = PaddingValues(0.dp)
+        if (hasRecentlyViewed) { // ✅ only show if repos exist
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("Clear All")
+                Text(
+                    text = "Recently Viewed",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+
+                TextButton(
+                    onClick = onClearRecentlyViewed,
+                    contentPadding = PaddingValues(0.dp)
+                ) {
+                    Text("Clear All")
+                }
             }
         }
     }

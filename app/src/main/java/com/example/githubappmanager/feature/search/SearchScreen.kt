@@ -48,7 +48,8 @@ fun SearchScreen(
             query = searchQuery,
             onQueryChange = { searchQuery = it },
             onSubmitUrl = onAddRepo,
-            onClearRecentlyViewed = onClearRecentlyViewed
+            onClearRecentlyViewed = onClearRecentlyViewed,
+            hasRecentlyViewed = repos.isNotEmpty() // ✅ show only if repos exist
         )
 
         if (filteredRepos.isEmpty()) {
