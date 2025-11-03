@@ -13,6 +13,7 @@ import com.example.githubappmanager.domain.model.AppInstallStatus
 import com.example.githubappmanager.domain.model.GitHubRelease
 import com.example.githubappmanager.domain.model.GitHubRepo
 import com.example.githubappmanager.domain.model.withInfo
+import kotlinx.coroutines.Job // ✅ Added import
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -31,6 +32,8 @@ class RepoViewModel(application: Application) : AndroidViewModel(application) {
 
     private val _downloadProgress = MutableStateFlow<Map<String, DownloadProgress>>(emptyMap())
     val downloadProgress: StateFlow<Map<String, DownloadProgress>> = _downloadProgress.asStateFlow()
+
+    private val downloadJobs = mutableMapOf<String, Job>() // ✅ Added field
 
     val repos = repoDataStore.repos
 
@@ -69,7 +72,7 @@ class RepoViewModel(application: Application) : AndroidViewModel(application) {
     // ----------------------------
     private fun refreshAllInstallStatus() {
         viewModelScope.launch {
-            val currentRepos = repos.first() // ✅ Get list from Flow
+            val currentRepos = repos.first()
             currentRepos.forEach { repo ->
                 try {
                     val updatedRepo = detectAndUpdateInstallStatus(repo)
@@ -136,8 +139,10 @@ class RepoViewModel(application: Application) : AndroidViewModel(application) {
                     null
                 }
 
-                val foundPackageName = appInstallManager.findInstalledPackageForRepo(baseRepo.owner, baseRepo.name)
-                val packageName = foundPackageName ?: appInstallManager.guessPackageName(baseRepo.owner, baseRepo.name)
+                val foundPackageName =
+                    appInstallManager.findInstalledPackageForRepo(baseRepo.owner, baseRepo.name)
+                val packageName =
+                    foundPackageName ?: appInstallManager.guessPackageName(baseRepo.owner, baseRepo.name)
                 val installStatus = appInstallManager.checkInstallStatus(release, packageName)
 
                 val apkSizeBytes = release?.extractApkSize()
@@ -162,8 +167,13 @@ class RepoViewModel(application: Application) : AndroidViewModel(application) {
     fun refreshRepo(repo: GitHubRepo) {
         viewModelScope.launch {
             try {
-                val foundPackageName = appInstallManager.findInstalledPackageForRepo(repo.owner, repo.name)
-                val packageName = foundPackageName ?: repo.packageName ?: appInstallManager.guessPackageName(repo.owner, repo.name)
+                val foundPackageName =
+                    appInstallManager.findInstalledPackageForRepo(repo.owner, repo.name)
+                val packageName =
+                    foundPackageName ?: repo.packageName ?: appInstallManager.guessPackageName(
+                        repo.owner,
+                        repo.name
+                    )
                 val release = try {
                     apiService.getLatestRelease(repo.owner, repo.name)
                 } catch (e: Exception) {
@@ -200,9 +210,11 @@ class RepoViewModel(application: Application) : AndroidViewModel(application) {
     private fun refreshInstallStatusLocal(repo: GitHubRepo) {
         viewModelScope.launch {
             try {
-                val foundPackageName = appInstallManager.findInstalledPackageForRepo(repo.owner, repo.name)
+                val foundPackageName =
+                    appInstallManager.findInstalledPackageForRepo(repo.owner, repo.name)
                 val packageName = foundPackageName ?: repo.packageName
-                val installStatus = appInstallManager.checkInstallStatus(repo.latestRelease, packageName)
+                val installStatus =
+                    appInstallManager.checkInstallStatus(repo.latestRelease, packageName)
 
                 val updatedRepo = repo.copy(
                     packageName = packageName,
@@ -224,31 +236,44 @@ class RepoViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    // ✅ Updated version with cancel-safe logic
     fun downloadAndInstallApk(repo: GitHubRepo) {
+        // Cancel any existing job for this repo
+        downloadJobs[repo.url]?.cancel()
+        downloadJobs.remove(repo.url)
+
         viewModelScope.launch {
             addRecentlyViewed(repo)
             val release = repo.latestRelease ?: return@launch
             val apkAsset = release.preferredApk ?: return@launch
-
             val fileName = "${repo.name}-${release.tagName}.apk"
 
-            apkDownloader.downloadApk(apkAsset.downloadUrl, fileName)
-                .collect { progress ->
-                    _downloadProgress.value = _downloadProgress.value + (repo.url to progress)
+            val job = launch {
+                apkDownloader.downloadApk(apkAsset.downloadUrl, fileName)
+                    .collect { progress ->
+                        _downloadProgress.value = _downloadProgress.value + (repo.url to progress)
 
-                    if (progress.isComplete && progress.error == null) {
-                        val downloadedFile = apkDownloader.getDownloadedApk(fileName)
-                        downloadedFile?.let { file ->
-                            appInstallManager.installApk(file)
-                            refreshInstallStatusLocal(repo)
+                        if (progress.isComplete && progress.error == null) {
+                            val downloadedFile = apkDownloader.getDownloadedApk(fileName)
+                            downloadedFile?.let { file ->
+                                appInstallManager.installApk(file)
+                                refreshInstallStatusLocal(repo)
+                            }
+                            _downloadProgress.value = _downloadProgress.value - repo.url
+                        } else if (progress.error != null) {
+                            Log.e("RepoViewModel", "APK download failed: ${progress.error}")
                         }
-                        // Clear progress after installation
-                        _downloadProgress.value = _downloadProgress.value - repo.url
-                    } else if (progress.error != null) {
-                        Log.e("RepoViewModel", "APK download failed: ${progress.error}")
                     }
-                }
+            }
+            downloadJobs[repo.url] = job
         }
+    }
+
+    // ✅ New cancel function
+    fun cancelDownload(repoUrl: String) {
+        downloadJobs[repoUrl]?.cancel()
+        downloadJobs.remove(repoUrl)
+        _downloadProgress.value = _downloadProgress.value - repoUrl
     }
 
     fun uninstallApp(packageName: String) {

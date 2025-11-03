@@ -40,6 +40,7 @@ fun RepoCard(
     onInstall: () -> Unit,
     onUninstall: () -> Unit,
     onClearProgress: () -> Unit,
+    onCancelDownload: () -> Unit, // ✅ Added here
     modifier: Modifier = Modifier,
     onClick: (() -> Unit)? = null,
     onLongClick: (() -> Unit)? = null,
@@ -220,6 +221,14 @@ fun RepoCard(
                         }
 
                         !progress.isComplete -> {
+                            // ✅ Cancel Download Button
+                            IconButton(onClick = onCancelDownload) {
+                                Icon(
+                                    imageVector = Icons.Filled.Close,
+                                    contentDescription = "Cancel download",
+                                    tint = MaterialTheme.colorScheme.error
+                                )
+                            }
                             CircularProgressIndicator(
                                 modifier = Modifier.size(24.dp),
                                 strokeWidth = 2.dp

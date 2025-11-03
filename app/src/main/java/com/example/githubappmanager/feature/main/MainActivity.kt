@@ -112,12 +112,13 @@ fun GithubAppManagerApp() {
                             )
                         },
                         onClearProgress = { repo -> viewModel.clearDownloadProgress(repo.url) },
+                        onCancelDownload = { repo -> viewModel.cancelDownload(repo.url) }, // ✅ Passed correctly
                         onRepoClick = { repo -> selectedRepo = repo },
-                        onRemoveRepo = { url -> viewModel.removeRepo(url) }, // Swipe delete
+                        onRemoveRepo = { url -> viewModel.removeRepo(url) },
                         onRestoreRepos = { removedRepos ->
                             removedRepos.forEach { viewModel.addRepo(it.url) }
-                        }, // 👈 Undo restore handler
-                        snackbarHostState = snackbarHostState, // 👈 pass host for Snackbar
+                        },
+                        snackbarHostState = snackbarHostState,
                         modifier = Modifier.padding(innerPadding)
                     )
 
@@ -133,10 +134,16 @@ fun GithubAppManagerApp() {
                         downloadProgress = downloadProgress,
                         onRefreshRepo = { repo -> viewModel.refreshRepo(repo) },
                         onInstallApp = { repo -> viewModel.downloadAndInstallApk(repo) },
-                        onUninstallApp = { repo -> repo.packageName?.let { viewModel.uninstallApp(it) } },
+                        onUninstallApp = { repo ->
+                            repo.packageName?.let { viewModel.uninstallApp(it) } ?: Log.w(
+                                "MainActivity",
+                                "Uninstall clicked but packageName is null for ${repo.url}"
+                            )
+                        },
                         onAddRepo = { url -> viewModel.addRepo(url) },
                         onClearRecentlyViewed = { viewModel.clearRecentlyViewed() },
                         onRepoClick = { repo -> selectedRepo = repo },
+                        onCancelDownload = { repo -> viewModel.cancelDownload(repo.url) }, // ✅ FIXED (added)
                         modifier = Modifier
                             .padding(innerPadding)
                             .fillMaxSize()
@@ -166,6 +173,7 @@ fun GithubAppManagerApp() {
                                 "Uninstall requested but packageName is null for ${repo.url}"
                             )
                         },
+                        onCancelDownload = { viewModel.cancelDownload(repo.url) }, // ✅ Already handled
                         onBack = { selectedRepo = null }
                     )
                 }

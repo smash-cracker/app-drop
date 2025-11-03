@@ -28,6 +28,7 @@ fun HomeScreen(
     onUninstallApp: (GitHubRepo) -> Unit,
     onClearProgress: (GitHubRepo) -> Unit,
     onRepoClick: (GitHubRepo) -> Unit,
+    onCancelDownload: (GitHubRepo) -> Unit,           // ✅ Added back
     modifier: Modifier = Modifier,
     onRemoveRepo: ((String) -> Unit)? = null,
     onRestoreRepos: ((List<GitHubRepo>) -> Unit)? = null,
@@ -176,6 +177,7 @@ fun HomeScreen(
                                 onInstall = { onInstallApp(repo) },
                                 onUninstall = { onUninstallApp(repo) },
                                 onClearProgress = { onClearProgress(repo) },
+                                onCancelDownload = { onCancelDownload(repo) },   // ✅ Added back
                                 onClick = {
                                     if (selectionMode) {
                                         selectedRepos = if (selectedRepos.contains(repo.url))

@@ -10,6 +10,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Cancel
 import androidx.compose.material.icons.filled.CloudDownload
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Info
@@ -46,6 +47,7 @@ fun RepoDetailScreen(
     onInstall: () -> Unit,
     onUninstall: () -> Unit,
     onBack: () -> Unit,
+    onCancelDownload: () -> Unit, // ✅ Added Cancel handler
     modifier: Modifier = Modifier
 ) {
     BackHandler(onBack = onBack)
@@ -78,7 +80,7 @@ fun RepoDetailScreen(
         }
     ) { innerPadding ->
 
-        // ✅ Modern PullToRefreshBox API (Compose 1.7+)
+        // ✅ Modern PullToRefreshBox API
         PullToRefreshBox(
             isRefreshing = isRefreshing,
             onRefresh = {
@@ -105,6 +107,7 @@ fun RepoDetailScreen(
                 downloadProgress = downloadProgress,
                 onInstall = onInstall,
                 onUninstall = onUninstall,
+                onCancelDownload = onCancelDownload, // ✅ Pass down
                 contentPadding = innerPadding
             )
         }
@@ -117,6 +120,7 @@ private fun RepoDetailContent(
     downloadProgress: DownloadProgress?,
     onInstall: () -> Unit,
     onUninstall: () -> Unit,
+    onCancelDownload: () -> Unit, // ✅ Added parameter
     contentPadding: PaddingValues
 ) {
     val release = repo.latestRelease
@@ -186,7 +190,7 @@ private fun RepoDetailContent(
             }
         }
 
-        // --- Info Row: Stars, Size, Version ---
+        // --- Info Row ---
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -227,6 +231,16 @@ private fun RepoDetailContent(
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
+
+                    // ✅ Cancel button
+                    TextButton(
+                        onClick = onCancelDownload,
+                        modifier = Modifier.align(Alignment.End)
+                    ) {
+                        Icon(Icons.Filled.Cancel, contentDescription = null)
+                        Spacer(Modifier.width(4.dp))
+                        Text("Cancel")
+                    }
                 }
             }
 
