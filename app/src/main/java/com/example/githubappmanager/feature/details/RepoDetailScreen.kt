@@ -381,8 +381,8 @@ private fun StatusActions(
                         onClick = onOpenApp,
                         modifier = Modifier.weight(1f)
                     ) {
-                        Icon(Icons.Filled.Info, contentDescription = null)
-                        Spacer(modifier = Modifier.width(8.dp))
+                        // Icon(Icons.Filled.Info, contentDescription = null)
+                        // Spacer(modifier = Modifier.width(8.dp))
                         Text("Open")
                     }
 
