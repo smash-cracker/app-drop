@@ -1,6 +1,8 @@
 package com.example.githubappmanager.feature.details
 
+import android.content.Intent
 import android.graphics.drawable.Drawable
+import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -47,7 +49,7 @@ fun RepoDetailScreen(
     onInstall: () -> Unit,
     onUninstall: () -> Unit,
     onBack: () -> Unit,
-    onCancelDownload: () -> Unit, // ✅ Added Cancel handler
+    onCancelDownload: () -> Unit, // ✅ Cancel handler
     modifier: Modifier = Modifier
 ) {
     BackHandler(onBack = onBack)
@@ -55,6 +57,21 @@ fun RepoDetailScreen(
     val coroutineScope = rememberCoroutineScope()
     var isRefreshing by remember { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
+    val context = LocalContext.current
+
+    // ✅ Open App handler
+    val onOpenApp: () -> Unit = {
+        try {
+            val launchIntent = context.packageManager.getLaunchIntentForPackage(repo.packageName!!)
+            if (launchIntent != null) {
+                context.startActivity(launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+            } else {
+                Toast.makeText(context, "Unable to open this app", Toast.LENGTH_SHORT).show()
+            }
+        } catch (e: Exception) {
+            Toast.makeText(context, "Failed to open app: ${e.message}", Toast.LENGTH_SHORT).show()
+        }
+    }
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
@@ -107,7 +124,8 @@ fun RepoDetailScreen(
                 downloadProgress = downloadProgress,
                 onInstall = onInstall,
                 onUninstall = onUninstall,
-                onCancelDownload = onCancelDownload, // ✅ Pass down
+                onOpenApp = onOpenApp, // ✅ Pass open handler
+                onCancelDownload = onCancelDownload,
                 contentPadding = innerPadding
             )
         }
@@ -120,7 +138,8 @@ private fun RepoDetailContent(
     downloadProgress: DownloadProgress?,
     onInstall: () -> Unit,
     onUninstall: () -> Unit,
-    onCancelDownload: () -> Unit, // ✅ Added parameter
+    onOpenApp: () -> Unit, // ✅ Added parameter
+    onCancelDownload: () -> Unit,
     contentPadding: PaddingValues
 ) {
     val release = repo.latestRelease
@@ -258,6 +277,7 @@ private fun RepoDetailContent(
                     installStatus = repo.installStatus,
                     onInstall = onInstall,
                     onUninstall = onUninstall,
+                    onOpenApp = onOpenApp, // ✅ Pass here
                     hasApk = release?.androidAssets?.isNotEmpty() == true
                 )
             }
@@ -335,6 +355,7 @@ private fun StatusActions(
     installStatus: AppInstallStatus,
     onInstall: () -> Unit,
     onUninstall: () -> Unit,
+    onOpenApp: () -> Unit, // ✅ Added parameter
     hasApk: Boolean
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -355,7 +376,26 @@ private fun StatusActions(
             }
 
             AppInstallStatus.INSTALLED_CURRENT -> {
-                PrimaryActionButton("Uninstall", Icons.Filled.Delete, onUninstall)
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                    OutlinedButton(
+                        onClick = onOpenApp,
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Icon(Icons.Filled.Info, contentDescription = null)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Open")
+                    }
+
+                    Button(
+                        onClick = onUninstall,
+                        modifier = Modifier.weight(1f),
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                    ) {
+                        Icon(Icons.Filled.Delete, contentDescription = null)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Uninstall")
+                    }
+                }
             }
 
             AppInstallStatus.UNKNOWN -> {
