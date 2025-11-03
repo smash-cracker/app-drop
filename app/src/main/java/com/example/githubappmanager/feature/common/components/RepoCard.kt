@@ -40,7 +40,7 @@ fun RepoCard(
     onInstall: () -> Unit,
     onUninstall: () -> Unit,
     onClearProgress: () -> Unit,
-    onCancelDownload: () -> Unit, // ✅ Added here
+    onCancelDownload: () -> Unit,
     modifier: Modifier = Modifier,
     onClick: (() -> Unit)? = null,
     onLongClick: (() -> Unit)? = null,
@@ -49,7 +49,7 @@ fun RepoCard(
 ) {
     val context = LocalContext.current
 
-    // --- Try to get installed app icon if available ---
+    // --- Installed app icon if available ---
     val appIconPainter: Painter? = remember(repo.packageName) {
         if (repo.installStatus == AppInstallStatus.INSTALLED_CURRENT ||
             repo.installStatus == AppInstallStatus.INSTALLED_OUTDATED
@@ -89,7 +89,7 @@ fun RepoCard(
                 )
             }
 
-            // --- App Icon, Avatar, or Placeholder ---
+            // --- App Icon / Owner Avatar / Default ---
             when {
                 appIconPainter != null -> {
                     Image(
@@ -183,14 +183,37 @@ fun RepoCard(
                                 color = MaterialTheme.colorScheme.primary,
                                 modifier = Modifier.padding(top = 4.dp)
                             )
-                            LinearProgressIndicator(
-                                progress = if (progress.totalBytes > 0) {
-                                    progress.bytesDownloaded.toFloat() / progress.totalBytes.toFloat()
-                                } else 0f,
+
+                            // ✅ Progress bar + Cancel button on same line
+                            Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(top = 2.dp)
-                            )
+                                    .padding(top = 2.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                LinearProgressIndicator(
+                                    progress = if (progress.totalBytes > 0) {
+                                        progress.bytesDownloaded.toFloat() / progress.totalBytes.toFloat()
+                                    } else 0f,
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .height(4.dp)
+                                )
+
+                                Spacer(modifier = Modifier.width(8.dp))
+
+                                IconButton(
+                                    onClick = onCancelDownload,
+                                    modifier = Modifier.size(28.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Filled.Close,
+                                        contentDescription = "Cancel download",
+                                        tint = MaterialTheme.colorScheme.error
+                                    )
+                                }
+                            }
                         }
                     }
                 }
@@ -221,16 +244,9 @@ fun RepoCard(
                         }
 
                         !progress.isComplete -> {
-                            // ✅ Cancel Download Button
-                            IconButton(onClick = onCancelDownload) {
-                                Icon(
-                                    imageVector = Icons.Filled.Close,
-                                    contentDescription = "Cancel download",
-                                    tint = MaterialTheme.colorScheme.error
-                                )
-                            }
+                            // Small spinner next to X for ongoing download
                             CircularProgressIndicator(
-                                modifier = Modifier.size(24.dp),
+                                modifier = Modifier.size(20.dp),
                                 strokeWidth = 2.dp
                             )
                         }
