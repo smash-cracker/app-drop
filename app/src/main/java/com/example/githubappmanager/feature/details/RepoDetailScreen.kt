@@ -218,29 +218,38 @@ private fun RepoDetailContent(
             downloadProgress != null && !downloadProgress.isComplete -> {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text("Downloading latest APK…")
-                    LinearProgressIndicator(
-                        progress = {
-                            if (downloadProgress.totalBytes > 0) {
-                                downloadProgress.bytesDownloaded.toFloat() / downloadProgress.totalBytes.toFloat()
-                            } else 0f
-                        },
-                        modifier = Modifier.fillMaxWidth()
-                    )
+
+                    // ✅ Row with progress bar + cancel button
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        LinearProgressIndicator(
+                            progress = {
+                                if (downloadProgress.totalBytes > 0) {
+                                    downloadProgress.bytesDownloaded.toFloat() / downloadProgress.totalBytes.toFloat()
+                                } else 0f
+                            },
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(6.dp)
+                                .clip(MaterialTheme.shapes.small)
+                        )
+
+                        Spacer(modifier = Modifier.width(12.dp))
+
+                        TextButton(onClick = onCancelDownload) {
+                            Icon(Icons.Filled.Cancel, contentDescription = "Cancel")
+                            Spacer(Modifier.width(4.dp))
+                            Text("Cancel")
+                        }
+                    }
+
                     Text(
                         text = "${downloadProgress.bytesDownloaded} / ${downloadProgress.totalBytes} bytes",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
-
-                    // ✅ Cancel button
-                    TextButton(
-                        onClick = onCancelDownload,
-                        modifier = Modifier.align(Alignment.End)
-                    ) {
-                        Icon(Icons.Filled.Cancel, contentDescription = null)
-                        Spacer(Modifier.width(4.dp))
-                        Text("Cancel")
-                    }
                 }
             }
 
