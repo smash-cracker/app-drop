@@ -10,8 +10,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Public
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.foundation.layout.Box
@@ -51,8 +51,8 @@ import com.example.githubappmanager.feature.explore.ExploreScreen
 import com.example.githubappmanager.feature.home.HomeScreen
 import com.example.githubappmanager.feature.main.components.AddRepoDialog
 import com.example.githubappmanager.feature.search.SearchScreen
+import com.example.githubappmanager.feature.profile.ProfileScreen
 import com.example.githubappmanager.feature.explore.ExploreScreen
-import com.example.githubappmanager.feature.details.RepoDetailScreen
 import com.example.githubappmanager.ui.theme.GithubAppManagerTheme
 
 class MainActivity : ComponentActivity() {
@@ -103,7 +103,6 @@ fun GithubAppManagerApp() {
                     MainTab.HOME -> HomeScreen(
                         repos = repos,
                         downloadProgress = downloadProgress,
-                        // onRefreshRepo = { repo -> viewModel.refreshRepo(repo) },
                         onInstallApp = { repo -> viewModel.downloadAndInstallApk(repo) },
                         onUninstallApp = { repo ->
                             repo.packageName?.let { viewModel.uninstallApp(it) } ?: Log.w(
@@ -112,7 +111,7 @@ fun GithubAppManagerApp() {
                             )
                         },
                         onClearProgress = { repo -> viewModel.clearDownloadProgress(repo.url) },
-                        onCancelDownload = { repo -> viewModel.cancelDownload(repo.url) }, // ✅ Passed correctly
+                        onCancelDownload = { repo -> viewModel.cancelDownload(repo.url) },
                         onRepoClick = { repo -> selectedRepo = repo },
                         onRemoveRepo = { url -> viewModel.removeRepo(url) },
                         onRestoreRepos = { removedRepos ->
@@ -143,13 +142,13 @@ fun GithubAppManagerApp() {
                         onAddRepo = { url -> viewModel.addRepo(url) },
                         onClearRecentlyViewed = { viewModel.clearRecentlyViewed() },
                         onRepoClick = { repo -> selectedRepo = repo },
-                        onCancelDownload = { repo -> viewModel.cancelDownload(repo.url) }, // ✅ FIXED (added)
+                        onCancelDownload = { repo -> viewModel.cancelDownload(repo.url) },
                         modifier = Modifier
                             .padding(innerPadding)
                             .fillMaxSize()
                     )
 
-                    MainTab.BOOKMARK -> BookmarkPlaceholder(
+                    MainTab.PROFILE -> ProfileScreen(
                         modifier = Modifier
                             .padding(innerPadding)
                             .fillMaxSize()
@@ -173,7 +172,7 @@ fun GithubAppManagerApp() {
                                 "Uninstall requested but packageName is null for ${repo.url}"
                             )
                         },
-                        onCancelDownload = { viewModel.cancelDownload(repo.url) }, // ✅ Already handled
+                        onCancelDownload = { viewModel.cancelDownload(repo.url) },
                         onBack = { selectedRepo = null }
                     )
                 }
@@ -182,16 +181,9 @@ fun GithubAppManagerApp() {
     }
 }
 
-@Composable
-private fun BookmarkPlaceholder(modifier: Modifier = Modifier) {
-    Box(modifier, contentAlignment = Alignment.Center) {
-        Text("Bookmarks (placeholder)")
-    }
-}
-
 private enum class MainTab(val label: String, val icon: ImageVector) {
     HOME("Home", Icons.Filled.Home),
     EXPLORE("Explore", Icons.Filled.Public),
     SEARCH("Search", Icons.Filled.Search),
-    BOOKMARK("Bookmark", Icons.Filled.Bookmark)
+    PROFILE("Profile", Icons.Filled.Person)
 }
