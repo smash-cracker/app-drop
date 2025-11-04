@@ -66,9 +66,6 @@ dependencies {
     implementation(libs.androidx.material3)
     implementation("androidx.compose.material3:material3:1.3.1")
 
-    // ✅ Pull-to-refresh is already built into Material3 1.3.1+
-    // No extra dependency needed!
-
     // Icons
     implementation("androidx.compose.material:material-icons-extended:1.7.5")
 
@@ -89,6 +86,16 @@ dependencies {
     implementation("com.vladsch.flexmark:flexmark-util:0.64.8")
     implementation("com.github.jeziellago:compose-markdown:0.5.7")
 
+    // ✅ Firebase setup
+    implementation(platform("com.google.firebase:firebase-bom:34.5.0"))
+
+    // Firebase products
+    implementation("com.google.firebase:firebase-analytics")
+    implementation("com.google.firebase:firebase-auth")
+
+    // ✅ Google Sign-In
+    implementation("com.google.android.gms:play-services-auth:21.2.0")
+
     // Testing
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
@@ -97,17 +104,4 @@ dependencies {
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
-
-
-    // Import the Firebase BoM
-  implementation(platform("com.google.firebase:firebase-bom:34.5.0"))
-
-
-  // TODO: Add the dependencies for Firebase products you want to use
-  // When using the BoM, don't specify versions in Firebase dependencies
-  implementation("com.google.firebase:firebase-analytics")
-
-
-  // Add the dependencies for any other desired Firebase products
-  // https://firebase.google.com/docs/android/setup#available-libraries
 }
