@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "479132779249",
+    "project_id": "app-drop-63a49",
+    "storage_bucket": "app-drop-63a49.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:479132779249:android:9c636cac805d670038df50",
+        "android_client_info": {
+          "package_name": "com.manager.appdrop"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "479132779249-8bh7krs71k8bqk6cfhqegq81h62073d5.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCFSaw9N6LudruWwspw8JXl_DkpURHs6eQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "479132779249-8bh7krs71k8bqk6cfhqegq81h62073d5.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
