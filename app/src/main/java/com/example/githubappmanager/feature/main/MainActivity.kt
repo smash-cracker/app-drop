@@ -43,6 +43,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
@@ -89,33 +90,46 @@ fun GithubAppManagerApp() {
             Scaffold(
                 modifier = Modifier.fillMaxSize(),
                 snackbarHost = { SnackbarHost(snackbarHostState) },
-                // ✅ Custom TopAppBar with left-aligned title + circular app icon
+
+                // ✅ TopAppBar with drop shadow + divider line
                 topBar = {
-                    TopAppBar(
-                        title = {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                Image(
-                                    painter = painterResource(id = R.drawable.ic_launcher_foreground),
-                                    contentDescription = "App Icon",
-                                    modifier = Modifier
+                    Surface(
+                        shadowElevation = 8.dp, // <-- Add drop shadow here
+                        color = MaterialTheme.colorScheme.surface
+                    ) {
+                        Column {
+                            TopAppBar(
+                                title = {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Image(
+                                            painter = painterResource(id = R.drawable.ic_launcher_foreground),
+                                            contentDescription = "App Icon",
+                                            modifier = Modifier
                                         .size(60.dp)
-                                        .clip(CircleShape)
-                                )
+                                                .clip(CircleShape)
+                                        )
                                 Spacer(modifier = Modifier.width(0.dp))
-                                Text(
-                                    text = "App Drop",
-                                    style = MaterialTheme.typography.titleLarge
+                                        Text(
+                                            text = "App Drop",
+                                            style = MaterialTheme.typography.titleLarge
+                                        )
+                                    }
+                                },
+                                colors = TopAppBarDefaults.topAppBarColors(
+                                    containerColor = MaterialTheme.colorScheme.surface
                                 )
-                            }
-                        },
-                        colors = TopAppBarDefaults.topAppBarColors(
-                            containerColor = MaterialTheme.colorScheme.surface
-                        )
-                    )
+                            )
+                            Divider(
+                                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f),
+                                thickness = 1.4.dp
+                            )
+                        }
+                    }
                 },
+
+                // ✅ Bottom Navigation Bar
                 bottomBar = {
                     NavigationBar {
                         MainTab.entries.forEach { tab ->
@@ -186,6 +200,7 @@ fun GithubAppManagerApp() {
                 }
             }
 
+            // ✅ Repo detail overlay
             activeDetailRepo?.let { repo ->
                 Surface(
                     modifier = Modifier.fillMaxSize(),
