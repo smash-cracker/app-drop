@@ -12,6 +12,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -32,26 +33,31 @@ fun SearchScreen(
     onAddRepo: (String) -> Unit,
     onClearRecentlyViewed: () -> Unit,
     onRepoClick: (GitHubRepo) -> Unit,
+    onCancelDownload: (GitHubRepo) -> Unit,   // ✅ Added missing parameter
     modifier: Modifier = Modifier
 ) {
     var searchQuery by rememberSaveable { mutableStateOf("") }
+
     val filteredRepos = remember(searchQuery, repos) {
         if (searchQuery.isBlank()) repos
         else repos.filter {
             it.displayName.contains(searchQuery, ignoreCase = true) ||
-                it.url.contains(searchQuery, ignoreCase = true)
+            it.url.contains(searchQuery, ignoreCase = true)
         }
     }
 
     Column(modifier = modifier.padding(16.dp)) {
+        // 🔍 Search Bar
         SearchBar(
             query = searchQuery,
             onQueryChange = { searchQuery = it },
             onSubmitUrl = onAddRepo,
-            onClearRecentlyViewed = onClearRecentlyViewed
+            onClearRecentlyViewed = onClearRecentlyViewed,
+            hasRecentlyViewed = repos.isNotEmpty() // ✅ show only if repos exist
         )
 
         if (filteredRepos.isEmpty()) {
+            // 🕵️ No results message
             Box(
                 modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center
@@ -59,6 +65,7 @@ fun SearchScreen(
                 Text("No matching repositories found")
             }
         } else {
+            // 📜 Repo list
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -67,10 +74,10 @@ fun SearchScreen(
                     RepoCard(
                         repo = repo,
                         downloadProgress = downloadProgress[repo.url],
-                        onRefresh = { onRefreshRepo(repo) },
                         onInstall = { onInstallApp(repo) },
                         onUninstall = { onUninstallApp(repo) },
-                        onClearProgress = {},
+                        onClearProgress = {}, // optional callback if needed
+                        onCancelDownload = { onCancelDownload(repo) }, // ✅ added correctly
                         onClick = { onRepoClick(repo) }
                     )
                 }

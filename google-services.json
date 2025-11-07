@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "479132779249",
+    "project_id": "app-drop-63a49",
+    "storage_bucket": "app-drop-63a49.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:479132779249:android:9b5062fd72537a2138df50",
+        "android_client_info": {
+          "package_name": "com.example.githubappmanager"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "479132779249-2tigqd9gu18po67s7u51ioklqu5hdh83.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.githubappmanager",
+            "certificate_hash": "7492377d4d19b0b585c7016efad04264e35807d7"
+          }
+        },
+        {
+          "client_id": "479132779249-8bh7krs71k8bqk6cfhqegq81h62073d5.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCFSaw9N6LudruWwspw8JXl_DkpURHs6eQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "479132779249-8bh7krs71k8bqk6cfhqegq81h62073d5.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
