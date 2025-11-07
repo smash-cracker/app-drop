@@ -1,8 +1,5 @@
 package com.example.githubappmanager.feature.profile
 
-import android.app.Activity
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -17,40 +14,45 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import coil.compose.rememberAsyncImagePainter
+import androidx.credentials.CredentialManager
+import androidx.credentials.CustomCredential
+import androidx.credentials.GetCredentialRequest
+import androidx.credentials.exceptions.GetCredentialException
 import com.example.githubappmanager.R
-import com.google.android.gms.auth.api.signin.GoogleSignIn
-import com.google.android.gms.auth.api.signin.GoogleSignInClient
-import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.GoogleAuthProvider
+import com.google.android.libraries.identity.googleid.GetSignInWithGoogleOption
+import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
+import coil.compose.rememberAsyncImagePainter
+import kotlinx.coroutines.launch
 
 @Composable
 fun ProfileScreen(modifier: Modifier = Modifier) {
     val context = LocalContext.current
     val auth = remember { FirebaseAuth.getInstance() }
     var user by remember { mutableStateOf(auth.currentUser) }
-
-    // ✅ Configure Google Sign-In
-    val googleSignInClient: GoogleSignInClient = remember {
-        val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-            .requestIdToken(context.getString(R.string.default_web_client_id))
-            .requestEmail()
+    var isLoading by remember { mutableStateOf(false) }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
+    val coroutineScope = rememberCoroutineScope()
+    val credentialManager = remember { CredentialManager.create(context) }
+    val serverClientId = remember(context) { context.getString(R.string.default_web_client_id) }
+    val googleIdOption = remember(serverClientId) {
+        GetSignInWithGoogleOption.Builder(serverClientId).build()
+    }
+    val credentialRequest = remember(googleIdOption) {
+        GetCredentialRequest.Builder()
+            .addCredentialOption(googleIdOption)
             .build()
-        GoogleSignIn.getClient(context, gso)
     }
 
-    val signInLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.StartActivityForResult()
-    ) { result ->
-        val task = GoogleSignIn.getSignedInAccountFromIntent(result.data)
-        if (task.isSuccessful) {
-            val account = task.result
-            val credential = GoogleAuthProvider.getCredential(account.idToken, null)
-            auth.signInWithCredential(credential).addOnCompleteListener { signInTask ->
-                if (signInTask.isSuccessful) {
-                    user = auth.currentUser
-                }
+    fun signInWithFirebase(idToken: String) {
+        val credential = GoogleAuthProvider.getCredential(idToken, null)
+        auth.signInWithCredential(credential).addOnCompleteListener { signInTask ->
+            isLoading = false
+            if (signInTask.isSuccessful) {
+                user = auth.currentUser
+            } else {
+                errorMessage = signInTask.exception?.localizedMessage ?: "Failed to sign in with Firebase."
             }
         }
     }
@@ -101,8 +103,8 @@ fun ProfileScreen(modifier: Modifier = Modifier) {
                 Button(
                     onClick = {
                         auth.signOut()
-                        googleSignInClient.signOut()
                         user = null
+                        errorMessage = null
                     },
                     modifier = Modifier.align(Alignment.CenterHorizontally)
                 ) {
@@ -144,12 +146,37 @@ fun ProfileScreen(modifier: Modifier = Modifier) {
 
                 Button(
                     onClick = {
-                        val signInIntent = googleSignInClient.signInIntent
-                        signInLauncher.launch(signInIntent)
+                        coroutineScope.launch {
+                            isLoading = true
+                            errorMessage = null
+                            try {
+                                val credentialResponse = credentialManager.getCredential(
+                                    context = context,
+                                    request = credentialRequest
+                                )
+                                val credential = credentialResponse.credential
+                                if (credential is CustomCredential &&
+                                    credential.type == GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL
+                                ) {
+                                    val googleIdTokenCredential = GoogleIdTokenCredential.createFrom(credential.data)
+                                    signInWithFirebase(googleIdTokenCredential.idToken)
+                                } else {
+                                    isLoading = false
+                                    errorMessage = "Unsupported credential type returned."
+                                }
+                            } catch (e: GetCredentialException) {
+                                isLoading = false
+                                errorMessage = e.message ?: "Google sign-in was canceled."
+                            } catch (e: Exception) {
+                                isLoading = false
+                                errorMessage = e.message ?: "Google sign-in failed."
+                            }
+                        }
                     },
+                    enabled = !isLoading,
                     modifier = Modifier.align(Alignment.CenterHorizontally)
                 ) {
-                    Text("Login with Google")
+                    Text(if (isLoading) "Loading..." else "Login with Google")
                 }
 
                 Spacer(Modifier.height(12.dp))
@@ -159,6 +186,19 @@ fun ProfileScreen(modifier: Modifier = Modifier) {
                 ) {
                     Text("Login with GitHub")
                 }
+            }
+            if (isLoading) {
+                Spacer(Modifier.height(16.dp))
+                CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))
+            }
+
+            errorMessage?.let { message ->
+                Spacer(Modifier.height(16.dp))
+                Text(
+                    text = message,
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodySmall
+                )
             }
         }
     }
