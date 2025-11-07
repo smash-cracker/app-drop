@@ -6,6 +6,8 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -57,71 +59,106 @@ fun ProfileScreen(modifier: Modifier = Modifier) {
     Box(
         modifier = modifier
             .fillMaxSize()
-            .padding(24.dp),
-        contentAlignment = Alignment.Center
+            .padding(24.dp)
     ) {
-        if (user != null) {
-            // ✅ Logged-in view
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Image(
-                    painter = rememberAsyncImagePainter(user?.photoUrl),
-                    contentDescription = "Profile picture",
+        Column(
+            modifier = Modifier.align(Alignment.TopStart),
+            horizontalAlignment = Alignment.Start
+        ) {
+            if (user != null) {
+                // ✅ Logged-in view
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier
-                        .size(100.dp)
-                        .clip(CircleShape)
-                )
-                Spacer(Modifier.height(16.dp))
-                Text(
-                    text = user?.displayName ?: "Unknown User",
-                    style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold)
-                )
-                Spacer(Modifier.height(8.dp))
-                Text(
-                    text = user?.email ?: "",
-                    fontSize = 16.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                        .fillMaxWidth()
+                        .padding(top = 8.dp)
+                ) {
+                    Image(
+                        painter = rememberAsyncImagePainter(user?.photoUrl),
+                        contentDescription = "Profile picture",
+                        modifier = Modifier
+                            .size(70.dp)
+                            .clip(CircleShape)
+                    )
+                    Spacer(Modifier.width(16.dp))
+                    Column {
+                        Text(
+                            text = user?.displayName ?: "Unknown User",
+                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
+                        )
+                        Text(
+                            text = user?.email ?: "",
+                            fontSize = 14.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+
                 Spacer(Modifier.height(24.dp))
-                Button(onClick = {
-                    auth.signOut()
-                    googleSignInClient.signOut()
-                    user = null
-                }) {
+                Divider()
+                Spacer(Modifier.height(16.dp))
+
+                Button(
+                    onClick = {
+                        auth.signOut()
+                        googleSignInClient.signOut()
+                        user = null
+                    },
+                    modifier = Modifier.align(Alignment.CenterHorizontally)
+                ) {
                     Text("Sign Out")
                 }
-            }
-        } else {
-            // 🔒 Not logged in view
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(
-                    text = "Login Required",
-                    style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold)
-                )
-                Spacer(Modifier.height(12.dp))
-                Text(
-                    text = "Sign in to access your profile",
-                    fontSize = 16.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+            } else {
+                // 🔒 Not logged in view
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 8.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.AccountCircle,
+                        contentDescription = "Default Profile Icon",
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier
+                            .size(70.dp)
+                            .clip(CircleShape)
+                    )
+                    Spacer(Modifier.width(16.dp))
+                    Column {
+                        Text(
+                            text = "Guest User",
+                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
+                        )
+                        Text(
+                            text = "Not signed in",
+                            fontSize = 14.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+
                 Spacer(Modifier.height(24.dp))
-                Button(onClick = {
-                    val signInIntent = googleSignInClient.signInIntent
-                    signInLauncher.launch(signInIntent)
-                }) {
+                Divider()
+                Spacer(Modifier.height(16.dp))
+
+                Button(
+                    onClick = {
+                        val signInIntent = googleSignInClient.signInIntent
+                        signInLauncher.launch(signInIntent)
+                    },
+                    modifier = Modifier.align(Alignment.CenterHorizontally)
+                ) {
                     Text("Login with Google")
                 }
+
                 Spacer(Modifier.height(12.dp))
-                OutlinedButton(onClick = {
-                    // TODO: GitHub OAuth flow
-                }) {
+                OutlinedButton(
+                    onClick = { /* TODO: GitHub OAuth flow */ },
+                    modifier = Modifier.align(Alignment.CenterHorizontally)
+                ) {
                     Text("Login with GitHub")
                 }
-                // Spacer(Modifier.height(8.dp))
-                // OutlinedButton(onClick = {
-                //     // TODO: Microsoft OAuth flow
-                // }) {
-                //     Text("Login with Microsoft")
-                // }
             }
         }
     }
