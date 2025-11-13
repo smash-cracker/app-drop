@@ -92,6 +92,9 @@ dependencies {
     // Firebase products
     implementation("com.google.firebase:firebase-analytics")
     implementation("com.google.firebase:firebase-auth")
+    // Firestore for syncing repos between devices
+    implementation("com.google.firebase:firebase-firestore-ktx")
+    implementation("com.google.firebase:firebase-firestore-ktx:24.8.1")
 
     implementation("com.google.android.gms:play-services-auth:21.2.0")
     implementation("androidx.credentials:credentials:1.3.0")

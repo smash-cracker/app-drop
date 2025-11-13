@@ -19,6 +19,12 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.FirebaseUser
+import com.example.githubappmanager.data.remote.FirebaseRepoSync
+import com.example.githubappmanager.data.local.SerializableGitHubRepo
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 class RepoViewModel(application: Application) : AndroidViewModel(application) {
 
@@ -37,6 +43,10 @@ class RepoViewModel(application: Application) : AndroidViewModel(application) {
 
     val repos = repoDataStore.repos
 
+    // Firebase sync helper
+    private val auth = FirebaseAuth.getInstance()
+    private val firebaseRepoSync = FirebaseRepoSync()
+
     // ----------------------------
     // Recently Viewed Management
     // ----------------------------
@@ -53,6 +63,16 @@ class RepoViewModel(application: Application) : AndroidViewModel(application) {
 
         // Refresh install status for all repos on app start
         refreshAllInstallStatus()
+
+        // Observe Firebase auth state to trigger sync when a user logs in/out
+        auth.addAuthStateListener { firebaseAuth ->
+            val user = firebaseAuth.currentUser
+            if (user != null) {
+                onUserLoggedIn(user)
+            } else {
+                onUserLoggedOut()
+            }
+        }
     }
 
     fun addRecentlyViewed(repo: GitHubRepo) {
@@ -293,6 +313,118 @@ class RepoViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             repoDataStore.clearAllRepos()
         }
+    }
+
+    private fun onUserLoggedOut() {
+        // Stop listening to remote changes when signed out
+        firebaseRepoSync.stopListening()
+    }
+
+    private fun onUserLoggedIn(user: FirebaseUser) {
+        viewModelScope.launch {
+            try {
+                // 1) Read local and remote
+                val local = repoDataStore.getReposOnce()
+                val remoteSerializable = try {
+                    firebaseRepoSync.fetchRemoteRepos(user.uid)
+                } catch (e: Exception) {
+                    emptyList<SerializableGitHubRepo>()
+                }
+
+                val remote = remoteSerializable.map { s ->
+                    GitHubRepo(
+                        url = s.url,
+                        name = s.name,
+                        owner = s.owner,
+                        addedAt = s.addedAt,
+                        latestRelease = s.latestRelease,
+                        packageName = s.packageName,
+                        installStatus = s.installStatus,
+                        stargazersCount = s.stargazersCount,
+                        forksCount = s.forksCount,
+                        watchersCount = s.watchersCount,
+                        apkSizeBytes = s.apkSizeBytes
+                    )
+                }
+
+                // 2) Merge local and remote (prefer newer addedAt)
+                val merged = mergeRepos(local, remote)
+
+                // 3) Persist merged locally and push to remote
+                repoDataStore.updateRepos(merged)
+                val serializableToPush = merged.map { repo ->
+                    SerializableGitHubRepo(
+                        url = repo.url,
+                        name = repo.name,
+                        owner = repo.owner,
+                        addedAt = repo.addedAt,
+                        latestRelease = repo.latestRelease,
+                        packageName = repo.packageName,
+                        installStatus = repo.installStatus,
+                        stargazersCount = repo.stargazersCount,
+                        forksCount = repo.forksCount,
+                        watchersCount = repo.watchersCount,
+                        apkSizeBytes = repo.apkSizeBytes
+                    )
+                }
+
+                try {
+                    firebaseRepoSync.pushRepos(user.uid, serializableToPush)
+                } catch (e: Exception) {
+                    // Ignore push failures for now
+                }
+
+                // 4) Start listening for remote changes and apply merges on updates
+                firebaseRepoSync.startListening(user.uid) { remoteList ->
+                    viewModelScope.launch {
+                        try {
+                            val remoteRepos = remoteList.map { s ->
+                                GitHubRepo(
+                                    url = s.url,
+                                    name = s.name,
+                                    owner = s.owner,
+                                    addedAt = s.addedAt,
+                                    latestRelease = s.latestRelease,
+                                    packageName = s.packageName,
+                                    installStatus = s.installStatus,
+                                    stargazersCount = s.stargazersCount,
+                                    forksCount = s.forksCount,
+                                    watchersCount = s.watchersCount,
+                                    apkSizeBytes = s.apkSizeBytes
+                                )
+                            }
+
+                            val currentLocal = repoDataStore.getReposOnce()
+                            val mergedRemote = mergeRepos(currentLocal, remoteRepos)
+                            repoDataStore.updateRepos(mergedRemote)
+                        } catch (_: Exception) {
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e("RepoViewModel", "Error syncing with Firebase", e)
+            }
+        }
+    }
+
+    private fun mergeRepos(local: List<GitHubRepo>, remote: List<GitHubRepo>): List<GitHubRepo> {
+        val map = mutableMapOf<String, GitHubRepo>()
+        (local + remote).forEach { repo ->
+            val existing = map[repo.url]
+            if (existing == null) {
+                map[repo.url] = repo
+            } else {
+                // prefer the one with newer addedAt, then prefer non-null latestRelease
+                val chosen = when {
+                    repo.addedAt > existing.addedAt -> repo
+                    repo.addedAt < existing.addedAt -> existing
+                    repo.latestRelease != null && existing.latestRelease == null -> repo
+                    else -> existing
+                }
+                map[repo.url] = chosen
+            }
+        }
+        return map.values.sortedByDescending { it.addedAt }
     }
 
     private fun GitHubRelease?.extractApkSize(): Long? {
