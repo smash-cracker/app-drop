@@ -10,6 +10,7 @@ import com.example.githubappmanager.domain.model.AppInstallStatus
 import com.example.githubappmanager.domain.model.GitHubRelease
 import com.example.githubappmanager.domain.model.GitHubRepo
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.map
@@ -161,5 +162,54 @@ class RepoDataStore(private val context: Context) {
 
     suspend fun clearRecentlyViewed() {
         _recentlyViewedRepos.value = emptyList()
+    }
+
+    // Replace the stored list of repos with the provided list.
+    suspend fun updateRepos(reposList: List<GitHubRepo>) {
+        context.dataStore.edit { preferences ->
+            val serializable = reposList.map {
+                SerializableGitHubRepo(
+                    url = it.url,
+                    name = it.name,
+                    owner = it.owner,
+                    addedAt = it.addedAt,
+                    latestRelease = it.latestRelease,
+                    packageName = it.packageName,
+                    installStatus = it.installStatus,
+                    stargazersCount = it.stargazersCount,
+                    forksCount = it.forksCount,
+                    watchersCount = it.watchersCount,
+                    apkSizeBytes = it.apkSizeBytes
+                )
+            }
+
+            preferences[reposKey] = Json.encodeToString(serializable)
+        }
+    }
+
+    // One-shot read of the current repo list
+    suspend fun getReposOnce(): List<GitHubRepo> {
+        val preferences = context.dataStore.data.first()
+        val jsonString = preferences[reposKey] ?: "[]"
+        return try {
+            val serializable = Json.decodeFromString<List<SerializableGitHubRepo>>(jsonString)
+            serializable.map {
+                GitHubRepo(
+                    url = it.url,
+                    name = it.name,
+                    owner = it.owner,
+                    addedAt = it.addedAt,
+                    latestRelease = it.latestRelease,
+                    packageName = it.packageName,
+                    installStatus = it.installStatus,
+                    stargazersCount = it.stargazersCount,
+                    forksCount = it.forksCount,
+                    watchersCount = it.watchersCount,
+                    apkSizeBytes = it.apkSizeBytes
+                )
+            }
+        } catch (e: Exception) {
+            emptyList()
+        }
     }
 }

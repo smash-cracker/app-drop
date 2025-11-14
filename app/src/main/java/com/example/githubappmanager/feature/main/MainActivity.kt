@@ -6,6 +6,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.foundation.shape.CircleShape
@@ -73,6 +74,12 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun GithubAppManagerApp() {
     GithubAppManagerTheme {
+        val isDarkTheme = isSystemInDarkTheme()
+        val appIcon = if (isDarkTheme) {
+            R.drawable.ic_launcher_lite
+        } else {
+            R.drawable.ic_launcher_dark
+        }
         val viewModel: RepoViewModel = viewModel()
         val repos by viewModel.repos.collectAsState(initial = emptyList())
         val recentlyViewed by viewModel.recentlyViewed.collectAsState(initial = emptyList())
@@ -104,10 +111,10 @@ fun GithubAppManagerApp() {
                                         verticalAlignment = Alignment.CenterVertically
                                     ) {
                                         Image(
-                                            painter = painterResource(id = R.drawable.ic_launcher_foreground),
+                                            painter = painterResource(id = appIcon),
                                             contentDescription = "App Icon",
                                             modifier = Modifier
-                                        .size(60.dp)
+                                                .size(30.dp)
                                                 .clip(CircleShape)
                                         )
                                 Spacer(modifier = Modifier.width(0.dp))
