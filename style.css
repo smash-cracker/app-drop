@@ -1,0 +1,152 @@
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #f7f9fc;
+  color: #222;
+}
+
+/* HEADER */
+.header {
+  width: 91%;
+  padding: 20px 60px;
+  background: #fff;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.header-logo {
+  width: 35px;
+  height: 35px;
+  background: linear-gradient(135deg, #4a63ff, #ff8fa3);
+  border-radius: 50%;
+}
+
+.header-title {
+  font-size: 22px;
+  font-weight: bold;
+  color: #333;
+}
+
+.header-nav a {
+  margin-right: 20px;
+  font-size: 16px;
+  text-decoration: none;
+  color: #444;
+  transition: 0.2s ease-in-out;
+}
+
+.header-nav a:hover {
+  color: #4a63ff;
+}
+
+.header-btn {
+  padding: 10px 18px;
+  background: #4a63ff;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.header-btn:hover {
+  opacity: 0.85;
+}
+
+/* MAIN SECTION */
+.hero {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 60px;
+}
+
+.left {
+  width: 45%;
+}
+
+.left h1 {
+  font-size: 42px;
+  margin-bottom: 20px;
+}
+
+.left p {
+  font-size: 18px;
+  margin-bottom: 30px;
+}
+
+.left input {
+  padding: 12px;
+  width: 60%;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  margin-right: 10px;
+}
+
+.left button {
+  padding: 12px 20px;
+  background: #4a63ff;
+  border: none;
+  color: #fff;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.global-half {
+  width: 50%;
+  height: 400px;
+  background: radial-gradient(circle at top left, #ff8fa3, #4a63ff);
+  border-top-right-radius: 300px;
+  border-bottom-right-radius: 300px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.global-half .logo {
+  position: absolute;
+  top: 40px;
+  left: 40px;
+  font-size: 26px;
+  font-weight: bold;
+  color: #fff;
+}
+
+.global-half .title {
+  font-size: 36px;
+  color: #fff;
+  font-weight: bold;
+}
+
+.features {
+  margin-top: 40px;
+  padding: 20px 60px;
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+}
+
+.feature-box {
+  width: 28%;
+  background: #fff;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+}
+
+.feature-box h3 {
+  margin-top: 0;
+  font-size: 20px;
+}
