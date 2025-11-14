@@ -38,6 +38,38 @@ body {
   
 }
 
+.cta-btn {
+  padding: 12px 20px;
+  background: #4a63ff;
+  border: none;
+  color: #fff;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+.icon-btn {
+  width: 44px;
+  height: 44px;
+  font-size: 22px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border: none;
+  background: #ffffff;
+  border-radius: 8px;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+  transition: 0.2s ease;
+}
+
+.icon-btn:hover {
+  transform: scale(1.08);
+  background: #f0f0f0;
+}
+
+
+
 .highlight-points {
   list-style: none;
   padding: 0;
