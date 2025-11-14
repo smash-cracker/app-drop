@@ -29,6 +29,34 @@ body {
   filter: drop-shadow(0 4px 15px rgba(0,0,0,0.25));
 }
 
+/* New enhancements for left hero section */
+.cta-row {
+  display: flex;
+  /* align-items: center; */
+  gap: 10px;
+  margin-bottom: 20px;
+  
+}
+
+.highlight-points {
+  list-style: none;
+  padding: 0;
+  margin-top: 10px;
+}
+
+.highlight-points li {
+  font-size: 16px;
+  margin-bottom: 6px;
+  color: #555;
+}
+.title-logo {
+  width: 36px;          /* adjust size as you like */
+  height: 36px;
+  object-fit: contain;
+  vertical-align: middle;
+  margin: 0 4px;
+}
+
 
 .header-logo-img {
   width: 40px;
@@ -103,13 +131,13 @@ body {
   margin-bottom: 30px;
 }
 
-.left input {
+/* .left input {
   padding: 12px;
   width: 60%;
   border-radius: 6px;
   border: 1px solid #ccc;
   margin-right: 10px;
-}
+} */
 
 .left button {
   padding: 12px 20px;
@@ -123,7 +151,7 @@ body {
 .global-half {
   width: 50%;
   height: 400px;
-  background: radial-gradient(circle at top left, #ff8fa3, #4a63ff);
+  background: radial-gradient(circle at top left, #fffbfb, #4a63ff);
   border-top-right-radius: 300px;
   border-bottom-right-radius: 300px;
   display: flex;
