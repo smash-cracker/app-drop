@@ -227,3 +227,9 @@ body {
   margin-top: 0;
   font-size: 20px;
 }
+
+#feedbackMsg {
+  font-size: 16px;
+  margin-left: 10px;
+  font-weight: bold;
+}

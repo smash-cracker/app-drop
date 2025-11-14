@@ -14,51 +14,38 @@
       <img src="images/logo.png" class="header-logo-img" alt="AppDrop Logo" />
       <span class="header-title"><b>AppDrop</b></span>
     </div>
-
-    <!-- <nav class="header-nav">
-      <a href="#">Home</a>
-      <a href="#">Features</a>
-      <a href="#">Contact</a>
-    </nav> -->
-
-    <!-- <button class="header-btn">Get Started</button> -->
   </header>
   <!-- HEADER END -->
 
   <section class="hero">
-     <div class="global-half">
-      <!-- <img src="images/logo.png" class="global-logo-img" alt="AppDrop Logo" /> -->
-<div class="title">
-  Your <img src="images/logo.png" class="title-logo" alt="A" />pp, Elevated
-</div>
+    <div class="global-half">
+      <div class="title">
+        Your <img src="images/logo.png" class="title-logo" alt="A" />pp, Elevated
+      </div>
     </div>
-   <div class="left">
-  <h1>Upload. Share. Deploy — Instantly.</h1>
 
-  <p>
-    AppDrop helps you host and share your Android apps with a single click.
-    No Play Store approval, no delays — just fast, clean and secure app delivery.
-  </p>
+    <div class="left">
+      <h1>Upload. Share. Deploy — Instantly.</h1>
 
-  <div class="cta-row">
-    <!-- <input type="email" placeholder="Enter your email" /> -->
-    <button> I am Interested</button>
-      <button class="icon-btn">
-        👍
-      </button>
+      <p>
+        AppDrop helps you host and share your Android apps with a single click.
+        No Play Store approval, no delays — just fast, clean and secure app delivery.
+      </p>
 
-      <button class="icon-btn">
-        👎
-      </button>
-  </div>
+      <div class="cta-row">
+        <button> I am Interested</button>
 
-  <ul class="highlight-points">
-    <li>✔ Simple upload & instant download links</li>
-    <li>✔ No account required for users</li>
-    <li>✔ Privacy-focused & lightning fast</li>
-  </ul>
-</div>
+        <button id="likeBtn" class="icon-btn">👍</button>
 
+        <span id="feedbackMsg"></span>
+      </div>
+
+      <ul class="highlight-points">
+        <li>✔ Simple upload & instant download links</li>
+        <li>✔ No account required for users</li>
+        <li>✔ Privacy-focused & lightning fast</li>
+      </ul>
+    </div>
   </section>
 
   <section class="features">
@@ -75,6 +62,17 @@
       <p>Easily change colors, fonts, and layout to match your brand.</p>
     </div>
   </section>
+
+  <!-- JS FOR LIKE -->
+  <script>
+    const likeBtn = document.getElementById("likeBtn");
+    const feedbackMsg = document.getElementById("feedbackMsg");
+
+    likeBtn.addEventListener("click", () => {
+      feedbackMsg.textContent = "Thanks for your feedback!";
+      feedbackMsg.style.color = "green";
+    });
+  </script>
 
 </body>
 </html>
