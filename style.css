@@ -19,6 +19,23 @@ body {
   z-index: 10;
 }
 
+.global-logo-img {
+  width: 80px;
+  height: 80px;
+  object-fit: contain;
+  position: absolute;
+  top: 40px;
+  left: 40px;
+  filter: drop-shadow(0 4px 15px rgba(0,0,0,0.25));
+}
+
+
+.header-logo-img {
+  width: 40px;
+  height: 40px;
+  object-fit: contain;   /* keeps it from stretching */
+}
+
 .header-left {
   display: flex;
   align-items: center;
